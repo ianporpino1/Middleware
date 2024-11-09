@@ -1,4 +1,4 @@
-﻿package lifecycle;
+package lifecycle;
 
 public class test {
 }

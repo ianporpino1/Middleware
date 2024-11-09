@@ -1,4 +1,4 @@
-﻿package annotation;
+package annotation;
 
 public class test {
 }
