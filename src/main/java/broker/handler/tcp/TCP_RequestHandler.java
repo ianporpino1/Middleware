@@ -19,11 +19,7 @@ class TCP_RequestHandler implements Runnable {
     public void run() {
         //recebe a request
         
-        //faz o unmarshall
-        
-        //chama o lifecyle manager
-        
-        //chama o invoker
+        //faz o unmarshall ou ja chama o invoker?
         
         //faz o marshall da resposta
         
