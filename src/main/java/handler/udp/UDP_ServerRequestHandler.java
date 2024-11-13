@@ -1,4 +1,4 @@
-﻿package broker.handler.udp;
+﻿package handler.udp;
 
 public class UDP_ServerRequestHandler {
 }

@@ -1,10 +1,10 @@
-﻿package broker.handler.tcp;
+﻿package handler.tcp;
 
 import java.net.ServerSocket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import broker.handler.interfaces.IServerRequestHandler;
+import handler.interfaces.IServerRequestHandler;
 
 public class TCP_ServerRequestHandler implements IServerRequestHandler {
     private ServerSocket socket;
