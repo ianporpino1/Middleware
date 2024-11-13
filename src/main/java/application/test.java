@@ -1,5 +1,4 @@
 package application;
-//classe anotada, teria os metodos de dominio (acho que nao da certo fazer assim, talvez criar uma classe de dominio separada e essa classe se comportar como um controller)
 
 import annotation.Get;
 import annotation.RequestMapping;
@@ -7,6 +6,7 @@ import annotation.scope.Scope;
 import annotation.scope.ScopeType;
 import annotation.strategy.CreationStrategy;
 import annotation.strategy.CreationStrategyType;
+import broker.Middleware;
 
 @RequestMapping("/test")
 @Scope(ScopeType.PER_REQUEST)
@@ -17,12 +17,18 @@ public class test {
     public String method(){
         return "test";
     }
+    
+    
+    
+    
 
     public static void main(String[] args) {
-        //registrar classe de dominio, instanciando-a
+        //registrar classe de dominio
 
         Middleware middleware = new Middleware();
+        middleware.addComponent(test.class);
+        middleware.addComponent(test.class);//outra classe
+        
         middleware.start(8080, "tcp");
-
     }
 }

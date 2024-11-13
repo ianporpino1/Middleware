@@ -3,37 +3,35 @@ package broker;
 import handler.interfaces.IServerRequestHandler;
 import handler.tcp.TCP_ServerRequestHandler;
 import handler.udp.UDP_ServerRequestHandler;
+import invoker.Invoker;
 import lifecycle.LifecycleManager;
+import lifecycle.LookupService;
 
 public class Middleware {
     public IServerRequestHandler requestHandler;
 
-    public Invoker invoker;
-
-    private Marshaller marshaller;
-
-    public LifecycleManager lifecycleManager;
+    private final Invoker invoker;
     
+    private final LookupService lookupService;
+
+    public Middleware() {
+        this.invoker = new Invoker();
+        this.lookupService = new LookupService();
+    }
+
     public void start(int port, String protocol) {
-        this.lifecycleManager = new LifecycleManager();
-
-        this.invoker = new Invoker(lifecycleManager);
-
-
-        this.marshaller = new Marshaller();
-
         //forma errada
         switch (protocol){
             case "tcp":
-                this.requestHandler = new TCP_ServerRequestHandler(port, invoker,new Marshaller());
+                this.requestHandler = new TCP_ServerRequestHandler(port, invoker);
                 break;
-            case "udp":
-                this.requestHandler = new UDP_ServerRequestHandler(port, invoker,new Marshaller());
+//            case "udp":
+//                this.requestHandler = new UDP_ServerRequestHandler(port, invoker);
         }
         
     }
 
-    public void addComponent(Object component) {
-        lookupService.addComponent();
+    public void addComponent(Class<?> component) {
+        lookupService.registerRoute(component);
     }
 }
