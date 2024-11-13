@@ -18,8 +18,6 @@ public class Middleware {
                 this.requestHandler = new UDP_ServerRequestHandler(port, invoker, new UDP_Marshaller());
         }
         
-        //switch case
-        System.out.println("Middleware started");
     }
     
     
