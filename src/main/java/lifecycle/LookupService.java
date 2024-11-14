@@ -1,6 +1,6 @@
 package lifecycle;
 
-import annotation.RequestMapping;
+import annotation.web.RequestMapping;
 
 import java.util.HashMap;
 

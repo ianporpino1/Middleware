@@ -1,9 +1,9 @@
 ﻿package invoker;
 
-import annotation.Delete;
-import annotation.Get;
-import annotation.Post;
-import annotation.Put;
+import annotation.web.Delete;
+import annotation.web.Get;
+import annotation.web.Post;
+import annotation.web.Put;
 import lifecycle.LifecycleManager;
 import lifecycle.LookupService;
 import message.HTTPMessage;
@@ -14,9 +14,9 @@ import java.lang.reflect.Method;
 public class Invoker {
     private Marshaller marshaller;
     
-    private LifecycleManager lifecycleManager;
+    private final LifecycleManager lifecycleManager;
     
-    private LookupService lookupService;
+    private final LookupService lookupService;
     
     
     public Invoker() {

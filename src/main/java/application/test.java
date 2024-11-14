@@ -1,7 +1,7 @@
 package application;
 
-import annotation.Get;
-import annotation.RequestMapping;
+import annotation.web.Get;
+import annotation.web.RequestMapping;
 import annotation.scope.Scope;
 import annotation.scope.ScopeType;
 import annotation.strategy.CreationStrategy;
