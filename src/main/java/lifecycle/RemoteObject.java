@@ -3,12 +3,12 @@ package lifecycle;
 public class RemoteObject {
     Class<?> clazz;
     LivecycleStrategy livecycleStrategy;
-    ResourceManegemantStrategy resourceManegemantStrategy;
+    ResourceManagementStrategy resourceManagementStrategy;
 
     public RemoteObject(Class<?> clazz) {
         this.clazz = clazz;
 
-        //todo: instanciate the strategys
+        //todo: instantiate the strategies
     }
 
     public Object getServant() {
