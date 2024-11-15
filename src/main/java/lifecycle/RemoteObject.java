@@ -7,13 +7,15 @@ public class RemoteObject {
 
     public RemoteObject(Class<?> clazz) {
         this.clazz = clazz;
+
+        //todo: instanciate the strategys
     }
 
-    public RemoteObject getServant() {
-        //todo
+    public Object getServant() {
+        return livecycleStrategy.getServant();
     }
 
     public void returnServant(Object servant) {
-        //todo
+        livecycleStrategy.returnServant(servant);
     }
 }

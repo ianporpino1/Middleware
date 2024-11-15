@@ -16,7 +16,7 @@ public class LifecycleManager {
         remoteObjects.put(clazz, remoteObject);
     }
 
-    public RemoteObject getRemoteObject(Class<?> clazz){
+    public Object getRemoteObject(Class<?> clazz){
         RemoteObject remoteObject = remoteObjects.get(clazz);
         return remoteObject.getServant();
     }
