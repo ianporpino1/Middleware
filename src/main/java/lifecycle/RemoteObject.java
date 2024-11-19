@@ -1,5 +1,7 @@
 package lifecycle;
 
+import lifecycle.exceptions.BadConstructorException;
+
 public class RemoteObject {
     Class<?> clazz;
     LivecycleStrategy livecycleStrategy;
@@ -11,7 +13,7 @@ public class RemoteObject {
         //todo: instantiate the strategies
     }
 
-    public Object getServant() {
+    public Object getServant() throws BadConstructorException {
         return livecycleStrategy.getServant();
     }
 

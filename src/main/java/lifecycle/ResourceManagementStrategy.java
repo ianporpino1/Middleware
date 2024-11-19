@@ -11,7 +11,7 @@ import java.lang.reflect.InvocationTargetException;
 public abstract class ResourceManagementStrategy {
     protected Class<?> clazz;
     protected Constructor<?> constructor;
-    public abstract Object getServant();
+    public abstract Object getServant() throws BadConstructorException;
     public abstract void create_servant();
     public abstract void returnServant(Object servant);
     public abstract void destroyServant(Object servant);
