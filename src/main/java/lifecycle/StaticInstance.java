@@ -1,5 +1,7 @@
 package lifecycle;
 
+import lifecycle.exceptions.BadConstructorException;
+
 public class StaticInstance extends LivecycleStrategy{
 
     public StaticInstance(ResourceManagementStrategy resources) {
@@ -8,7 +10,7 @@ public class StaticInstance extends LivecycleStrategy{
     }
 
     @Override
-    public Object getServant() {
+    public Object getServant() throws BadConstructorException {
         return resources.getServant();
     }
 

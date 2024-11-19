@@ -12,7 +12,7 @@ public class LifecycleManager {
         remoteObjects = new HashMap<>();
     }
 
-    public void registerObject(Class<?> clazz){
+    public void registerObject(Class<?> clazz) throws BadConstructorException {
         RemoteObject remoteObject = new RemoteObject(clazz);
         remoteObjects.put(clazz, remoteObject);
     }
