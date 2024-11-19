@@ -16,6 +16,7 @@ class TCP_RequestHandler implements Runnable {
     TCP_RequestHandler(Socket clientSocket, Invoker invoker) {
         this.clientSocket = clientSocket;
         this.invoker = invoker;
+        //talvez o broker que tenha que criar o marshaller, pois dessa forma cada thread tera um
         this.marshaller = new Marshaller();
     }
 

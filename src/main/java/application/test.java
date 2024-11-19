@@ -1,16 +1,18 @@
 package application;
 
+import annotation.Component;
 import annotation.web.Get;
 import annotation.web.RequestMapping;
 import annotation.scope.Scope;
 import annotation.scope.ScopeType;
 import annotation.strategy.CreationStrategy;
 import annotation.strategy.CreationStrategyType;
-import broker.Middleware;
+
 
 @RequestMapping("/test")
 @Scope(ScopeType.PER_REQUEST)
 @CreationStrategy(CreationStrategyType.LAZY_ACQUISITION)
+@Component //por enquanto vai ficar assim
 public class test {
 
     @Get("/rota")
@@ -19,16 +21,4 @@ public class test {
     }
     
     
-    
-    
-
-    public static void main(String[] args) {
-        //registrar classe de dominio
-
-        Middleware middleware = new Middleware();
-        middleware.addComponent(test.class);
-        middleware.addComponent(test.class);//outra classe
-        
-        middleware.start(8080, "tcp");
-    }
 }
