@@ -1,9 +1,6 @@
 package invoker;
 
-import annotation.web.Delete;
-import annotation.web.Get;
-import annotation.web.Post;
-import annotation.web.Put;
+import annotation.web.*;
 import lifecycle.LifecycleManager;
 import lifecycle.LookupService;
 import message.HTTPMessage;
@@ -25,12 +22,12 @@ public class Invoker {
     }
     
     public HTTPMessage invoke(HTTPMessage request){
-        String route = request.resource();
+        String fullRoute = request.resource();
         String httpMethod = request.httpMethod();
         
-        Class<?> clazz = lookupService.getRoute(route);
+        Class<?> clazz = lookupService.getRoute(fullRoute);
 
-        Method targetMethod = findAnnotatedMethod(clazz, httpMethod, route);
+        Method targetMethod = findAnnotatedMethod(clazz, httpMethod, fullRoute);
 
         Object servant = null;
                 //lifecycleManager.getInstance(clazz);
@@ -46,7 +43,9 @@ public class Invoker {
         return null;
     }
 
-    private Method findAnnotatedMethod(Class<?> clazz, String httpMethod, String methodRoute) {
+    private Method findAnnotatedMethod(Class<?> clazz, String httpMethod, String fullRoute) {
+        String baseRoute = clazz.getAnnotation(RequestMapping.class).value();
+        String methodRoute = fullRoute.substring(baseRoute.length());
         for (Method method : clazz.getDeclaredMethods()) {
             if (matchesAnnotation(method, httpMethod, methodRoute)) {
                 return method;

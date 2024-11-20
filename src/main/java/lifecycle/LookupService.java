@@ -3,6 +3,7 @@ package lifecycle;
 import annotation.web.RequestMapping;
 
 import java.util.HashMap;
+import java.util.Set;
 
 public class LookupService {
     public HashMap<String, Class<?>> routes;
@@ -20,7 +21,13 @@ public class LookupService {
         }
     }
     
-    public Class<?> getRoute(String route){
-        return routes.get(route);
+    public Class<?> getRoute(String fullRoute){
+        Set<String> baseRoutes = routes.keySet();
+        for (String baseRoute : baseRoutes) {
+            if (fullRoute.startsWith(baseRoute)) {
+                return routes.get(baseRoute);
+            }
+        }
+        return null;
     }
 }
