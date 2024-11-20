@@ -1,4 +1,4 @@
-﻿package extension.interceptors;
+package extension.interceptors;
 
 import message.HTTPMessage;
 

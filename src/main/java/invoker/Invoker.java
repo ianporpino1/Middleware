@@ -1,4 +1,4 @@
-﻿package invoker;
+package invoker;
 
 import annotation.web.Delete;
 import annotation.web.Get;
@@ -12,7 +12,7 @@ import org.json.JSONObject;
 import java.lang.reflect.Method;
 
 public class Invoker {
-    private Marshaller marshaller;
+    //private Marshaller marshaller;
     
     private final LifecycleManager lifecycleManager;
     
@@ -32,7 +32,8 @@ public class Invoker {
 
         Method targetMethod = findAnnotatedMethod(clazz, httpMethod, route);
 
-        Object servant = lifecycleManager.getInstance(clazz);
+        Object servant = null;
+                //lifecycleManager.getInstance(clazz);
         try {
             assert targetMethod != null;
             var result = (JSONObject) targetMethod.invoke(servant, request.body());

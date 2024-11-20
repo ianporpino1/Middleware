@@ -1,4 +1,4 @@
-﻿package handler.tcp;
+package handler.tcp;
 
 import invoker.Invoker;
 import message.HTTPMessage;
@@ -11,13 +11,13 @@ class TCP_RequestHandler implements Runnable {
 
     private Invoker invoker;
 
-    private Marshaller marshaller;
+    //private Marshaller marshaller;
 
     TCP_RequestHandler(Socket clientSocket, Invoker invoker) {
         this.clientSocket = clientSocket;
         this.invoker = invoker;
         //talvez o broker que tenha que criar o marshaller, pois dessa forma cada thread tera um
-        this.marshaller = new Marshaller();
+        //this.marshaller = new Marshaller();
     }
 
     @Override
@@ -37,7 +37,7 @@ class TCP_RequestHandler implements Runnable {
             //n sei se eh a melhor abordagem, pq writer vai ter que usar write()
             //dentro do marshaller
             //outra opcao seria mandar pro marshaller o outputstream/inpustream
-            marshaller.serialize(writer, response);
+            //marshaller.serialize(writer, response);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -46,7 +46,8 @@ class TCP_RequestHandler implements Runnable {
     private HTTPMessage readRequest() {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
             
-            return marshaller.desserialize(reader);
+            return null;
+                    //marshaller.desserialize(reader);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

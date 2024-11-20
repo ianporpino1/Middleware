@@ -13,12 +13,13 @@ import java.util.Set;
 public class MiddlewareApplication {
     public static void run(Class<?> appClass, String[] args) {
         if (appClass.isAnnotationPresent(annotation.MiddlewareApplication.class)) {
-            MiddlewareApplication application = new MiddlewareApplication();//args
+            String basePackage = appClass.getPackageName();
+            MiddlewareApplication application = new MiddlewareApplication(basePackage);//args
             application.start();
         }
     }
-    
-    
+
+    private final String basePackage;
     
     public IServerRequestHandler requestHandler;
 
@@ -26,7 +27,8 @@ public class MiddlewareApplication {
     
     private final LookupService lookupService;
 
-    public MiddlewareApplication() {
+    public MiddlewareApplication(String basePackage) {
+        this.basePackage = basePackage;
         this.invoker = new Invoker();
         this.lookupService = new LookupService();
         //talvez criar marshaller aqui
@@ -35,12 +37,12 @@ public class MiddlewareApplication {
     private void start() {
         scanAndRegisterComponents();
         //por enquanto
-        run(8080,"tcp");
+        run(8080);
     }
 
     private void scanAndRegisterComponents() {
         //biblioteca p scanear classpath
-        Reflections reflections = new Reflections("", Scanners.SubTypes);
+        Reflections reflections = new Reflections(basePackage, Scanners.TypesAnnotated);
         Set<Class<?>> components = reflections.getTypesAnnotatedWith(Component.class);
 
         for (Class<?> clazz : components) {
@@ -49,16 +51,8 @@ public class MiddlewareApplication {
         }
     }
 
-    public void run(int port, String protocol) {
-        //forma errada
-        switch (protocol){
-            case "tcp":
-                this.requestHandler = new TCP_ServerRequestHandler(port, invoker);
-                break;
-//            case "udp":
-//                this.requestHandler = new UDP_ServerRequestHandler(port, invoker);
-        }
-        
+    public void run(int port) {
+        this.requestHandler = new TCP_ServerRequestHandler(port, invoker);
     }
 
     public void addComponent(Class<?> component) {
