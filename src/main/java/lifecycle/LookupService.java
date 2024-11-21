@@ -22,12 +22,10 @@ public class LookupService {
     }
     
     public Class<?> getRoute(String fullRoute){
-        Set<String> baseRoutes = routes.keySet();
-        for (String baseRoute : baseRoutes) {
-            if (fullRoute.startsWith(baseRoute)) {
-                return routes.get(baseRoute);
-            }
-        }
-        return null;
+        return routes.keySet().stream()
+                .filter(fullRoute::startsWith)
+                .map(routes::get)
+                .findFirst()
+                .orElse(null);
     }
 }
