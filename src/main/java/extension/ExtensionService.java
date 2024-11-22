@@ -19,12 +19,12 @@ public class ExtensionService {
     public void removeInterceptor(Interceptor interceptor) {
         interceptors.remove(interceptor);
     }
-    public void interceptBefore(HttpRequest message) throws SecurityException {
+    public void interceptBefore(HttpRequest message) {
         for (Interceptor interceptor : interceptors) {
             interceptor.verifyBefore(message);
         }
     }
-    public void interceptAfter(HttpResponse message) throws SecurityException {
+    public void interceptAfter(HttpResponse message) {
         for (Interceptor interceptor : interceptors) {
             interceptor.verifyAfter(message);
         }
