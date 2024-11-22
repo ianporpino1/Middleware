@@ -35,6 +35,7 @@ public class Invoker {
                 //lifecycleManager.getInstance(clazz);
         try {
             assert targetMethod != null;
+            //TODO: adicionar checagem de parametros do metodo
             var result = targetMethod.invoke(servant);
 
             var response = new HttpResponse();

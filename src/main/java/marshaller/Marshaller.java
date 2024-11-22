@@ -1,9 +1,27 @@
 package marshaller;
 
 public class Marshaller {
-    public Marshaller(){
-        
-    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
 //    public <T> String serialize(T obj){
 //        JSONObject jsonObject = new JSONObject(obj);
