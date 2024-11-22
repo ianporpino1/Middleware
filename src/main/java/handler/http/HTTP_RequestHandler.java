@@ -1,5 +1,6 @@
 package handler.http;
 
+import handler.interfaces.IHandler;
 import invoker.Invoker;
 import message.HTTPMessage;
 import org.json.JSONObject;
@@ -8,7 +9,7 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
-public class HTTP_RequestHandler implements Runnable {
+public class HTTP_RequestHandler implements Runnable, IHandler {
     private Socket clientSocket;
 
     private Invoker invoker;
@@ -24,6 +25,11 @@ public class HTTP_RequestHandler implements Runnable {
 
     @Override
     public void run() {
+        handle(clientSocket);
+    }
+
+    @Override
+    public void handle(Socket clientSocket) {
         //recebe a request
         HTTPMessage httpMessage = readRequest();
 
@@ -88,4 +94,6 @@ public class HTTP_RequestHandler implements Runnable {
             throw new RuntimeException("Erro ao ler a requisição HTTP", e);
         }
     }
+
+    
 }
