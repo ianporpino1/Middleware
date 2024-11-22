@@ -34,11 +34,18 @@ public class Invoker {
         Object servant = clazz.getConstructor().newInstance();
                 //lifecycleManager.getInstance(clazz);
         try {
-            assert targetMethod != null;
+            var response = new HttpResponse();
+            
+            //interceptors
+            //extensionService.interceptBefore(request, response, servant)
+            
             //TODO: adicionar checagem de parametros do metodo
             var result = targetMethod.invoke(servant);
+            
+            //interceptors
+            //extensionService.interceptAfter(request, response)
 
-            var response = new HttpResponse();
+            
             response.setBody(result.toString());
             response.setStatusCode(200);
             response.setStatusMessage("OK");

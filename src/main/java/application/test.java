@@ -16,6 +16,7 @@ import annotation.strategy.CreationStrategyType;
 public class test {
 
     @Get("/rota")
+    //@Secured anotacao que forcaria requisicao ter token
     public String method(){
         return "test";
     }

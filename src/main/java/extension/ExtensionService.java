@@ -3,7 +3,7 @@ package extension;
 import extension.interceptors.Interceptor;
 import message.HttpResponse;
 
-import java.net.http.HttpRequest;
+import message.HttpRequest;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,14 +19,14 @@ public class ExtensionService {
     public void removeInterceptor(Interceptor interceptor) {
         interceptors.remove(interceptor);
     }
-    public void interceptBefore(HttpRequest message) {
+    public void interceptBefore(HttpRequest request, HttpResponse response) {
         for (Interceptor interceptor : interceptors) {
-            interceptor.verifyBefore(message);
+            interceptor.verifyBefore(request,response, null);
         }
     }
-    public void interceptAfter(HttpResponse message) {
+    public void interceptAfter(HttpRequest request, HttpResponse response) {
         for (Interceptor interceptor : interceptors) {
-            interceptor.verifyAfter(message);
+            interceptor.verifyAfter(request,response);
         }
     }
 }
