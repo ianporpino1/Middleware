@@ -1,8 +1,10 @@
 package extension.interceptors;
 
-import message.HTTPMessage;
+import message.HttpResponse;
+
+import java.net.http.HttpRequest;
 
 public interface Interceptor {
-    void verifyBefore(HTTPMessage message) throws SecurityException;
-    void verifyAfter(HTTPMessage message) throws SecurityException;
+    void verifyBefore(HttpRequest message) throws SecurityException;
+    void verifyAfter(HttpResponse message) throws SecurityException;
 }

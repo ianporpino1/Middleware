@@ -3,9 +3,11 @@ package invoker;
 import annotation.web.*;
 import lifecycle.LifecycleManager;
 import lifecycle.LookupService;
-import message.HTTPMessage;
+import message.HttpRequest;
+import message.HttpResponse;
 import org.json.JSONObject;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 public class Invoker {
@@ -16,26 +18,31 @@ public class Invoker {
     private final LookupService lookupService;
     
     
-    public Invoker() {
+    public Invoker(LookupService lookupService) {
         lifecycleManager = new LifecycleManager();
-        lookupService = new LookupService();
+        this.lookupService = lookupService;
     }
     
-    public HTTPMessage invoke(HTTPMessage request){
-        String fullRoute = request.resource();
-        String httpMethod = request.httpMethod();
+    public HttpResponse invoke(HttpRequest request) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        String fullRoute = request.getUrl();
+        String httpMethod = request.getMethod();
         
         Class<?> clazz = lookupService.getRoute(fullRoute);
 
         Method targetMethod = findAnnotatedMethod(clazz, httpMethod, fullRoute);
 
-        Object servant = null;
+        Object servant = clazz.getConstructor().newInstance();
                 //lifecycleManager.getInstance(clazz);
         try {
             assert targetMethod != null;
-            var result = (JSONObject) targetMethod.invoke(servant, request.body());
+            var result = targetMethod.invoke(servant);
 
-            return new HTTPMessage(request.httpMethod(), request.resource(), result);
+            var response = new HttpResponse();
+            response.setBody(result.toString());
+            response.setStatusCode(200);
+            response.setStatusMessage("OK");
+            
+            return response;
 
         } catch (Exception e) {
             e.printStackTrace();

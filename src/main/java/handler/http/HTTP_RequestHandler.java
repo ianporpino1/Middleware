@@ -2,10 +2,12 @@ package handler.http;
 
 import handler.interfaces.IHandler;
 import invoker.Invoker;
-import message.HTTPMessage;
+import message.HttpRequest;
+import message.HttpResponse;
 import org.json.JSONObject;
 
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
@@ -31,24 +33,42 @@ public class HTTP_RequestHandler implements Runnable, IHandler {
     @Override
     public void handle(Socket clientSocket) {
         //recebe a request
-        HTTPMessage httpMessage = readRequest();
+        HttpRequest request = readRequest();
+        if(request == null) {
+            sendResponse(null);
+            return;
+        }
+        //interceptors
 
         //faz o unmarshall ou ja chama o invoker?
-        //HTTPMessage response = invoker.invoke(httpMessage);
+        HttpResponse response;
+        try {
+            System.out.println(request);
+            response = invoker.invoke(request);
+        } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+
+        //interceptors
 
         //faz o marshall da resposta
-        sendResponse(null);
+        sendResponse(response);
     }
 
-    private void sendResponse(HTTPMessage response) {
+    private void sendResponse(HttpResponse response) {
         try {
-            String body = "response.body().toString()";
+            if(response == null) {
+                response = new HttpResponse();
+                response.setStatusCode(404);
+                response.setStatusMessage("Not Found");
+                response.setBody("erro");
+            }
             String statusLine = "HTTP/1.1 200 OK";
             String httpResponse = statusLine + "\r\n" +
                     "Content-Type: application/json\r\n" +
-                    "Content-Length: " + body.getBytes(StandardCharsets.UTF_8).length + "\r\n" +
+                    "Content-Length: " + response.getBody().getBytes().length + "\r\n" +
                     "\r\n" +
-                    body;
+                    response.getBody();
 
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(this.clientSocket.getOutputStream()));
             writer.write(httpResponse);
@@ -58,7 +78,7 @@ public class HTTP_RequestHandler implements Runnable, IHandler {
         }
     }
 
-    private HTTPMessage readRequest() {
+    private HttpRequest readRequest() {
         try {
             BufferedReader reader = new BufferedReader(new InputStreamReader(this.clientSocket.getInputStream()));
             String inputLine = reader.readLine();
@@ -89,7 +109,8 @@ public class HTTP_RequestHandler implements Runnable, IHandler {
             
             //marshaller para deserializar body.
 
-            return new HTTPMessage(method, route, new JSONObject(bodyBuilder));
+            return new HttpRequest(method, route, null,bodyBuilder.toString()) {
+            };
         } catch (IOException e) {
             throw new RuntimeException("Erro ao ler a requisição HTTP", e);
         }

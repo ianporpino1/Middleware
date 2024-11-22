@@ -1,8 +1,9 @@
 package extension;
 
 import extension.interceptors.Interceptor;
-import message.HTTPMessage;
+import message.HttpResponse;
 
+import java.net.http.HttpRequest;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,12 +19,12 @@ public class ExtensionService {
     public void removeInterceptor(Interceptor interceptor) {
         interceptors.remove(interceptor);
     }
-    public void interceptBefore(HTTPMessage message) throws SecurityException {
+    public void interceptBefore(HttpRequest message) throws SecurityException {
         for (Interceptor interceptor : interceptors) {
             interceptor.verifyBefore(message);
         }
     }
-    public void interceptAfter(HTTPMessage message) throws SecurityException {
+    public void interceptAfter(HttpResponse message) throws SecurityException {
         for (Interceptor interceptor : interceptors) {
             interceptor.verifyAfter(message);
         }

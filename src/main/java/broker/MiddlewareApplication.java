@@ -29,8 +29,8 @@ public class MiddlewareApplication {
 
     public MiddlewareApplication(String basePackage) {
         this.basePackage = basePackage;
-        this.invoker = new Invoker();
         this.lookupService = new LookupService();
+        this.invoker = new Invoker(lookupService);
         //talvez criar marshaller aqui
     }
 
