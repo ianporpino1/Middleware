@@ -63,8 +63,7 @@ public class HTTP_RequestHandler implements Runnable, IHandler {
                 response.setStatusMessage("Not Found");
                 response.setBody("erro");
             }
-            String statusLine = "HTTP/1.1 200 OK";
-            String httpResponse = statusLine + "\r\n" +
+            String httpResponse = "HTTP/1.1 " + response.getStatusCode() +" " + response.getStatusMessage() + "\r\n" +
                     "Content-Type: application/json\r\n" +
                     "Content-Length: " + response.getBody().getBytes().length + "\r\n" +
                     "\r\n" +
@@ -90,10 +89,17 @@ public class HTTP_RequestHandler implements Runnable, IHandler {
             String method = requestLineParts[0];
             String route = requestLineParts[1];
             String protocol = requestLineParts[2];// HTTP/1.1
+            
+            
+            var request = new HttpRequest();
+            request.setMethod(method);
+            request.setUrl(route);
 
             String headerLine;
             int contentLength = 0;
             while ((headerLine = reader.readLine()) != null && !headerLine.isEmpty()) {
+                String[] headerParts = headerLine.split(":");
+                request.addHeader(headerParts[0], headerParts[1]);
                 if (headerLine.startsWith("Content-Length:")) {
                     contentLength = Integer.parseInt(headerLine.split(":")[1].trim());
                 }
@@ -109,8 +115,7 @@ public class HTTP_RequestHandler implements Runnable, IHandler {
             
             //marshaller para deserializar body.
 
-            return new HttpRequest(method, route, null,bodyBuilder.toString()) {
-            };
+            return request;
         } catch (IOException e) {
             throw new RuntimeException("Erro ao ler a requisição HTTP", e);
         }

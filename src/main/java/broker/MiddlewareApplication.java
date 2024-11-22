@@ -1,6 +1,8 @@
 package broker;
 
 import annotation.Component;
+import extension.ExtensionService;
+import extension.interceptors.SecurityInterceptor;
 import handler.interfaces.IServerRequestHandler;
 import handler.ServerRequestHandler;
 import invoker.Invoker;
@@ -26,11 +28,15 @@ public class MiddlewareApplication {
     private final Invoker invoker;
 
     private final LookupService lookupService;
+    
+    private final ExtensionService extensionService;
 
     public MiddlewareApplication(String basePackage) {
         this.basePackage = basePackage;
         this.lookupService = new LookupService();
-        this.invoker = new Invoker(lookupService);
+        this.extensionService = new ExtensionService();
+        extensionService.addInterceptor(new SecurityInterceptor());
+        this.invoker = new Invoker(lookupService, extensionService);
         //talvez criar marshaller aqui
     }
 

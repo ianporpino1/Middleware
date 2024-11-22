@@ -1,6 +1,7 @@
 package invoker;
 
 import annotation.web.*;
+import extension.ExtensionService;
 import lifecycle.LifecycleManager;
 import lifecycle.LookupService;
 import message.HttpRequest;
@@ -17,9 +18,12 @@ public class Invoker {
     
     private final LookupService lookupService;
     
+    private final ExtensionService extensionService;
     
-    public Invoker(LookupService lookupService) {
+    
+    public Invoker(LookupService lookupService, ExtensionService extensionService) {
         lifecycleManager = new LifecycleManager();
+        this.extensionService = extensionService;
         this.lookupService = lookupService;
     }
     
@@ -37,7 +41,10 @@ public class Invoker {
             var response = new HttpResponse();
             
             //interceptors
-            //extensionService.interceptBefore(request, response, servant)
+            boolean test = extensionService.interceptBefore(request, response);
+            if (!test) {
+                return response;
+            }
             
             //TODO: adicionar checagem de parametros do metodo
             var result = targetMethod.invoke(servant);
@@ -45,7 +52,7 @@ public class Invoker {
             //interceptors
             //extensionService.interceptAfter(request, response)
 
-            
+           
             response.setBody(result.toString());
             response.setStatusCode(200);
             response.setStatusMessage("OK");

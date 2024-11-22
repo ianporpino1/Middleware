@@ -5,6 +5,6 @@ import message.HttpResponse;
 import message.HttpRequest;
 
 public interface Interceptor {
-    void verifyBefore(HttpRequest request, HttpResponse response, Object handler);
+    boolean verifyBefore(HttpRequest request, HttpResponse response);
     void verifyAfter(HttpRequest request, HttpResponse response);
 }

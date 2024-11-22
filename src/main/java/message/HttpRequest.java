@@ -1,5 +1,6 @@
 package message;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class HttpRequest {
@@ -14,8 +15,17 @@ public class HttpRequest {
         this.url = url;
         this.body = body;
         this.headers = headers;
+        
+    }
+
+    public HttpRequest() {
+        this.headers = new HashMap<>();
     }
     
+    public void addHeader(String key, String value) {
+        this.headers.put(key, value);
+    }
+
     public String getMethod() {
         return method;
     }
