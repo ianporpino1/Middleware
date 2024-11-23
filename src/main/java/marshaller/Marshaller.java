@@ -1,27 +1,20 @@
 package marshaller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
+
 public class Marshaller {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    public static <T> T deserialize(String value, Class<T> targetType) {
+        try {
+            return objectMapper.readValue(value, targetType);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Erro ao deserializar o valor para " + targetType.getName(), e);
+        }
+    }
+
 
 //    public <T> String serialize(T obj){
 //        JSONObject jsonObject = new JSONObject(obj);

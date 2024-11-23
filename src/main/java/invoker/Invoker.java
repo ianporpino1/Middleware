@@ -1,18 +1,26 @@
 package invoker;
 
+import annotation.parameters.PathVariable;
+import annotation.parameters.RequestBody;
+import annotation.parameters.RequestParam;
 import annotation.web.*;
 import extension.ExtensionService;
+import invoker.resolver.ParamResolver;
 import lifecycle.LifecycleManager;
 import lifecycle.LookupService;
+import marshaller.Marshaller;
 import message.HttpRequest;
 import message.HttpResponse;
-import org.json.JSONObject;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Invoker {
-    //private Marshaller marshaller;
+    private Marshaller marshaller;
     
     private final LifecycleManager lifecycleManager;
     
@@ -47,13 +55,22 @@ public class Invoker {
             }
             
             //TODO: adicionar checagem de parametros do metodo
-            var result = targetMethod.invoke(servant);
+            Object[] params = null;
+            if(targetMethod.getParameterCount() != 0) {
+                params = resolveParams(targetMethod, clazz,request);
+            }
             
+            Object result;
+            if (params == null) {
+                result = targetMethod.invoke(servant);
+            } else {
+                result = targetMethod.invoke(servant, params);
+            }
             //interceptors
             //extensionService.interceptAfter(request, response)
 
-           
-            response.setBody(result.toString());
+
+            response.setBody(result != null ? result.toString() : "null");
             response.setStatusCode(200);
             response.setStatusMessage("OK");
             
@@ -65,9 +82,83 @@ public class Invoker {
         return null;
     }
 
+    private Object[] resolveParams(Method targetMethod, Class<?> clazz,HttpRequest request) {
+        List<Object> params = new ArrayList<>();
+        
+        String routeTemplate = getRouteTemplate(clazz,targetMethod);
+        Map<String,String> pathVariables = ParamResolver.extractPathVariables(routeTemplate,request.getUrl());
+        System.out.println(pathVariables.get("userId"));
+        Map<String,String> queryParams = ParamResolver.extractQueryParams(request.getUrl());
+
+        for (Parameter parameter : targetMethod.getParameters()) {
+            if (parameter.isAnnotationPresent(PathVariable.class)) {
+                String pathVariableName = parameter.getAnnotation(PathVariable.class).value();
+                String pathVariableValue = pathVariables.get(pathVariableName);
+                params.add(convertToType(pathVariableValue, parameter.getType()));
+
+            } else if (parameter.isAnnotationPresent(RequestParam.class)) {
+                String requestParamName = parameter.getAnnotation(RequestParam.class).value();
+                String requestParamValue = queryParams.get(requestParamName);
+                params.add(convertToType(requestParamValue, parameter.getType()));
+
+            } else if (parameter.isAnnotationPresent(RequestBody.class)) {
+                String requestBody = request.getBody();
+                params.add(convertToType(requestBody, parameter.getType()));
+            }
+        }
+        return params.toArray();
+    }
+
+    private String getRouteTemplate(Class<?> clazz, Method targetMethod) {
+        System.out.println(clazz.getName());
+        String classTemplate = clazz.getAnnotation(RequestMapping.class).value();
+        
+        String methodTemplate = getMethodTemplate(targetMethod);
+        
+        return classTemplate + methodTemplate;
+    }
+
+    public String getMethodTemplate(Method targetMethod) {
+        var annotations = targetMethod.getAnnotations();
+        if (annotations.length != 1) {
+            throw new IllegalArgumentException("O método deve ter exatamente uma anotação HTTP!");
+        }
+
+        var annotation = annotations[0];
+        return switch (annotation) {
+            case Get get -> get.value();
+            case Post post -> post.value();
+            case Put put -> put.value();
+            case Delete delete -> delete.value();
+            default -> throw new IllegalStateException("Anotação HTTP desconhecida: " + annotation);
+        };
+    }
+
+    private Object convertToType(String value, Class<?> targetType) {
+        if (value == null) {
+            return null;
+        }
+
+        return switch (targetType.getName()) {
+            case "java.lang.String" -> value;
+            case "java.lang.Integer" -> Integer.parseInt(value);
+            case "java.lang.Long" -> Long.parseLong(value);
+            case "java.lang.Boolean" -> Boolean.parseBoolean(value);
+            default -> Marshaller.deserialize(value, targetType);
+        };
+    }
+
+
     private Method findAnnotatedMethod(Class<?> clazz, String httpMethod, String fullRoute) {
         String baseRoute = clazz.getAnnotation(RequestMapping.class).value();
+        
+        if (baseRoute.endsWith("/") && fullRoute.startsWith("/")) {
+            fullRoute = fullRoute.substring(1);
+        }
+        
         String methodRoute = fullRoute.substring(baseRoute.length());
+        methodRoute = methodRoute.split("\\?")[0];
+
         for (Method method : clazz.getDeclaredMethods()) {
             if (matchesAnnotation(method, httpMethod, methodRoute)) {
                 return method;
@@ -76,29 +167,35 @@ public class Invoker {
         return null;
     }
 
-    private boolean matchesAnnotation(Method method, String httpMethod, String methodRoute) {
+    private boolean matchesAnnotation(Method method, String httpMethod, String route) {
         switch (httpMethod) {
             case "GET":
                 if (method.isAnnotationPresent(Get.class)) {
-                    return method.getAnnotation(Get.class).value().equals(methodRoute);
+                    String routeTemplate = method.getAnnotation(Get.class).value();
+                    return matchesRoute(route, routeTemplate);
                 }
                 break;
             case "POST":
                 if (method.isAnnotationPresent(Post.class)) {
-                    return method.getAnnotation(Post.class).value().equals(methodRoute);
+                    String routeTemplate = method.getAnnotation(Post.class).value();
+                    return matchesRoute(route, routeTemplate);
                 }
                 break;
-            case "PUT":
-                if (method.isAnnotationPresent(Put.class)) {
-                    return method.getAnnotation(Put.class).value().equals(methodRoute);
-                }
-                break;
-            case "DELETE":
-                if (method.isAnnotationPresent(Delete.class)) {
-                    return method.getAnnotation(Delete.class).value().equals(methodRoute);
-                }
-                break;
+            // Adicione mais casos para PUT, DELETE, etc.
         }
         return false;
     }
+    private boolean matchesRoute(String route, String routeTemplate) {
+        String regex = routeTemplate
+                .replace("{", "(?<")
+                .replace("}", ">[a-zA-Z0-9]+)")
+                .replace("/", "\\/")
+                + "$";
+
+
+        Pattern pattern = Pattern.compile(regex);
+
+        return pattern.matcher(route).matches();
+    }
+
 }

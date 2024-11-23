@@ -1,6 +1,8 @@
 package application;
 
 import annotation.Component;
+import annotation.parameters.PathVariable;
+import annotation.parameters.RequestParam;
 import annotation.web.Get;
 import annotation.web.RequestMapping;
 import annotation.scope.Scope;
@@ -12,13 +14,13 @@ import annotation.strategy.CreationStrategyType;
 @RequestMapping("/test")
 @Scope(ScopeType.PER_REQUEST)
 @CreationStrategy(CreationStrategyType.LAZY_ACQUISITION)
-@Component //por enquanto vai ficar assim
+@Component
 public class test {
 
-    @Get("/rota")
+    @Get("/hello/{userId}")
     //@Secured anotacao que forcaria requisicao ter token
-    public String method(){
-        return "test";
+    public String hello(@RequestParam("name") String name, @PathVariable("userId") String userId) {
+        return "Hello " + name + " with " + userId;
     }
     
     

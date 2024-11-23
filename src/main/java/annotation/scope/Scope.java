@@ -8,5 +8,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface Scope {
-    public ScopeType value() default ScopeType.STATIC_INSTANCE;
+    ScopeType value() default ScopeType.STATIC_INSTANCE;
 }

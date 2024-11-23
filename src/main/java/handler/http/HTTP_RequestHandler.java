@@ -39,8 +39,7 @@ public class HTTP_RequestHandler implements Runnable, IHandler {
             return;
         }
         //interceptors
-
-        //faz o unmarshall ou ja chama o invoker?
+        
         HttpResponse response;
         try {
             System.out.println(request);
