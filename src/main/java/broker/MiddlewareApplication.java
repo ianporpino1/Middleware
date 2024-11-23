@@ -6,6 +6,7 @@ import extension.interceptors.SecurityInterceptor;
 import handler.interfaces.IServerRequestHandler;
 import handler.ServerRequestHandler;
 import invoker.Invoker;
+import lifecycle.LifecycleManager;
 import lifecycle.LookupService;
 import org.reflections.Reflections;
 import org.reflections.scanners.Scanners;
@@ -28,15 +29,17 @@ public class MiddlewareApplication {
     private final Invoker invoker;
 
     private final LookupService lookupService;
-    
-    private final ExtensionService extensionService;
 
     public MiddlewareApplication(String basePackage) {
         this.basePackage = basePackage;
         this.lookupService = new LookupService();
-        this.extensionService = new ExtensionService();
+        
+        ExtensionService extensionService = new ExtensionService();
         extensionService.addInterceptor(new SecurityInterceptor());
-        this.invoker = new Invoker(lookupService, extensionService);
+
+        LifecycleManager lifecycleManager = new LifecycleManager();
+        
+        this.invoker = new Invoker(lookupService, extensionService, lifecycleManager);
         //talvez criar marshaller aqui
     }
 

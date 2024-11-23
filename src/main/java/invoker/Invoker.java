@@ -21,8 +21,8 @@ public class Invoker {
     private final ExtensionService extensionService;
     
     
-    public Invoker(LookupService lookupService, ExtensionService extensionService) {
-        lifecycleManager = new LifecycleManager();
+    public Invoker(LookupService lookupService, ExtensionService extensionService, LifecycleManager lifecycleManager) {
+        this.lifecycleManager = lifecycleManager;
         this.extensionService = extensionService;
         this.lookupService = lookupService;
     }

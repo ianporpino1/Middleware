@@ -98,10 +98,15 @@ public class HTTP_RequestHandler implements Runnable, IHandler {
             String headerLine;
             int contentLength = 0;
             while ((headerLine = reader.readLine()) != null && !headerLine.isEmpty()) {
-                String[] headerParts = headerLine.split(":");
-                request.addHeader(headerParts[0], headerParts[1]);
-                if (headerLine.startsWith("Content-Length:")) {
-                    contentLength = Integer.parseInt(headerLine.split(":")[1].trim());
+                headerLine = headerLine.trim();
+                String[] headerParts = headerLine.split(":", 2);
+                String key = headerParts[0].trim();
+                String value = headerParts[1].trim();
+                
+                request.addHeader(key, value);
+                
+                if (key.equalsIgnoreCase("Content-Length")) {
+                    contentLength = Integer.parseInt(value);
                 }
             }
 
