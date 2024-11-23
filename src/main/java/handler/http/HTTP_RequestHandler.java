@@ -116,8 +116,7 @@ public class HTTP_RequestHandler implements Runnable, IHandler {
                 bodyBuilder.append(body);
             }
             System.out.println(method + " " + route + " " + headerLine + contentLength);
-            
-            //marshaller para deserializar body.
+            request.setBody(bodyBuilder.toString());
 
             return request;
         } catch (IOException e) {
