@@ -20,18 +20,9 @@ public class ExtensionService {
         interceptors.remove(interceptor);
     }
     public boolean interceptBefore(HttpRequest request, HttpResponse response) {
-        boolean continues;
-        for (Interceptor interceptor : interceptors) {
-            continues = interceptor.verifyBefore(request,response);
-            if (!continues) {
-                return false;
-            }
-        }
-        return true;
+        return interceptors.stream().allMatch(interceptor -> interceptor.verifyBefore(request, response));
     }
     public void interceptAfter(HttpRequest request, HttpResponse response) {
-        for (Interceptor interceptor : interceptors) {
-            interceptor.verifyAfter(request,response);
-        }
+        interceptors.forEach(interceptor -> interceptor.verifyAfter(request, response));
     }
 }
