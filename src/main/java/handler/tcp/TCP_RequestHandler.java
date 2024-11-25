@@ -1,6 +1,7 @@
 ﻿package handler.tcp;
 
 import invoker.Invoker;
+import marshaller.HttpMarshaller;
 import message.HTTPMessage;
 
 import java.io.*;
@@ -11,7 +12,7 @@ class TCP_RequestHandler implements Runnable {
 
     private Invoker invoker;
 
-    private Marshaller marshaller;
+    private HttpMarshaller marshaller;
 
     TCP_RequestHandler(Socket clientSocket, Invoker invoker) {
         this.clientSocket = clientSocket;
@@ -45,7 +46,7 @@ class TCP_RequestHandler implements Runnable {
     private HTTPMessage readRequest() {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
             
-            return marshaller.desserialize(reader);
+            return marshaller.deserialize(reader);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
