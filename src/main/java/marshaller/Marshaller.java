@@ -1,50 +1,13 @@
 package marshaller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import message.HTTPMessage;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 
-public class Marshaller {
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+public interface Marshaller {
+    HTTPMessage deserialize(BufferedReader reader) throws IOException;
 
-    public static <T> T deserialize(String value, Class<T> targetType) {
-        try {
-            return objectMapper.readValue(value, targetType);
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Erro ao deserializar o valor para " + targetType.getName(), e);
-        }
-    }
-
-
-//    public <T> String serialize(T obj){
-//        JSONObject jsonObject = new JSONObject(obj);
-//        return jsonObject.toString();
-//    }
-//    public <T> T deserialize(String json, Class<T> clazz){
-//        try {
-//            JSONObject jsonObject = new JSONObject(json);
-//            T obj = clazz.getDeclaredConstructor().newInstance();
-//            for (Field field : clazz.getDeclaredFields()) {
-//                field.setAccessible(true);
-//                if (jsonObject.has(field.getName())) {
-//                    field.set(obj, jsonObject.get(field.getName()));
-//                }
-//            }
-//            return obj;
-//        } catch (Exception e) {
-//            throw new RuntimeException("Erro durante a desserialização", e);
-//        }
-//    }
-
-//    private final ObjectMapper objectMapper = new ObjectMapper();
-//
-//    @Override
-//    public byte[] serialize(Object data) throws JsonProcessingException {
-//        return objectMapper.writeValueAsBytes(data);
-//    }
-//
-//    @Override
-//    public <T> T deserialize(String data, Class<T> clazz) throws JsonProcessingException {
-//        return objectMapper.readValue( data, clazz);
-//    }
+    void serialize(BufferedWriter writer, HTTPMessage response) throws IOException;
 }

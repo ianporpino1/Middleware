@@ -8,15 +8,17 @@ import extension.ExtensionService;
 import invoker.resolver.ParamResolver;
 import lifecycle.LifecycleManager;
 import lifecycle.LookupService;
+import marshaller.HttpMarshaller;
 import marshaller.Marshaller;
+import message.HTTPMessage;
 import message.HttpRequest;
-import message.HttpResponse;
 
-import java.lang.reflect.InvocationTargetException;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.net.Socket;
 import java.util.*;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Invoker {
@@ -30,56 +32,61 @@ public class Invoker {
     
     
     public Invoker(LookupService lookupService, ExtensionService extensionService, LifecycleManager lifecycleManager) {
+        this.marshaller = new HttpMarshaller();
         this.lifecycleManager = lifecycleManager;
         this.extensionService = extensionService;
         this.lookupService = lookupService;
     }
     
-    public HttpResponse invoke(HttpRequest request) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        String fullRoute = request.getUrl();
-        String httpMethod = request.getMethod();
+    public HTTPMessage invoke(Socket clientSocket) throws Exception {
+
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+
+        HTTPMessage httpMessage = marshaller.deserialize(bufferedReader);
+
+//        String fullRoute = request.getUrl();
+//        String httpMethod = request.getMethod();
         
-        Class<?> clazz = lookupService.getRoute(fullRoute);
-
-        Method targetMethod = findAnnotatedMethod(clazz, httpMethod, fullRoute);
-
-        Object servant = clazz.getConstructor().newInstance();
-                //lifecycleManager.getInstance(clazz);
-        try {
-            var response = new HttpResponse();
+//        Class<?> clazz = lookupService.getRoute(fullRoute);
+//
+//        Method targetMethod = findAnnotatedMethod(clazz, httpMethod, fullRoute);
+//
+//        Object servant = clazz.getConstructor().newInstance();
+//                //lifecycleManager.getInstance(clazz);
+//        try {
+//            var response = new HttpResponse();
+//
+//            //interceptors
+//            boolean test = extensionService.interceptBefore(request, response);
+//            if (!test) {
+//                return response;
+//            }
+//
+//            //TODO: adicionar checagem de parametros do metodo
+//            Object[] params = null;
+//            if(targetMethod.getParameterCount() != 0) {
+//                params = resolveParams(targetMethod, clazz,request);
+//            }
+//
+//            Object result;
+//            if (params == null) {
+//                result = targetMethod.invoke(servant);
+//            } else {
+//                result = targetMethod.invoke(servant, params);
+//            }
+//            //interceptors
+//            //extensionService.interceptAfter(request, response)
+//
+//
+//            response.setBody(result != null ? result.toString() : "null");
+//            response.setStatusCode(200);
+//            response.setStatusMessage("OK");
             
-            //interceptors
-            boolean test = extensionService.interceptBefore(request, response);
-            if (!test) {
-                return response;
-            }
-            
-            //TODO: adicionar checagem de parametros do metodo
-            Object[] params = null;
-            if(targetMethod.getParameterCount() != 0) {
-                params = resolveParams(targetMethod, clazz,request);
-            }
-            
-            Object result;
-            if (params == null) {
-                result = targetMethod.invoke(servant);
-            } else {
-                result = targetMethod.invoke(servant, params);
-            }
-            //interceptors
-            //extensionService.interceptAfter(request, response)
+            return httpMessage;
 
-
-            response.setBody(result != null ? result.toString() : "null");
-            response.setStatusCode(200);
-            response.setStatusMessage("OK");
-            
-            return response;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
     }
 
     private Object[] resolveParams(Method targetMethod, Class<?> clazz,HttpRequest request) {
@@ -94,16 +101,16 @@ public class Invoker {
             if (parameter.isAnnotationPresent(PathVariable.class)) {
                 String pathVariableName = parameter.getAnnotation(PathVariable.class).value();
                 String pathVariableValue = pathVariables.get(pathVariableName);
-                params.add(convertToType(pathVariableValue, parameter.getType()));
+//                params.add(convertToType(pathVariableValue, parameter.getType()));
 
             } else if (parameter.isAnnotationPresent(RequestParam.class)) {
                 String requestParamName = parameter.getAnnotation(RequestParam.class).value();
                 String requestParamValue = queryParams.get(requestParamName);
-                params.add(convertToType(requestParamValue, parameter.getType()));
+//                params.add(convertToType(requestParamValue, parameter.getType()));
 
             } else if (parameter.isAnnotationPresent(RequestBody.class)) {
                 String requestBody = request.getBody();
-                params.add(convertToType(requestBody, parameter.getType()));
+//                params.add(convertToType(requestBody, parameter.getType()));
             }
         }
         return params.toArray();
@@ -133,21 +140,6 @@ public class Invoker {
             default -> throw new IllegalStateException("Anotação HTTP desconhecida: " + annotation);
         };
     }
-
-    private Object convertToType(String value, Class<?> targetType) {
-        if (value == null) {
-            return null;
-        }
-
-        return switch (targetType.getName()) {
-            case "java.lang.String" -> value;
-            case "java.lang.Integer" -> Integer.parseInt(value);
-            case "java.lang.Long" -> Long.parseLong(value);
-            case "java.lang.Boolean" -> Boolean.parseBoolean(value);
-            default -> Marshaller.deserialize(value, targetType);
-        };
-    }
-
 
     private Method findAnnotatedMethod(Class<?> clazz, String httpMethod, String fullRoute) {
         String baseRoute = clazz.getAnnotation(RequestMapping.class).value();

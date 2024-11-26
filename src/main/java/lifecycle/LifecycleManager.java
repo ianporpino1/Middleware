@@ -1,6 +1,5 @@
 package lifecycle;
 
-import annotation.RequestMapping;
 import lifecycle.exceptions.BadConstructorException;
 
 import java.util.HashMap;

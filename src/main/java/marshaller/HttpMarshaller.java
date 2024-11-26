@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class HttpMarshaller implements IHttpMarshaller{
+public class HttpMarshaller implements Marshaller {
 
     @Override
     public HTTPMessage deserialize(BufferedReader reader) throws IOException {

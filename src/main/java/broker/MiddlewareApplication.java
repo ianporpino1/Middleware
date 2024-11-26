@@ -17,7 +17,7 @@ public class MiddlewareApplication {
     public static void run(Class<?> appClass, String[] args) {
         if (appClass.isAnnotationPresent(annotation.MiddlewareApplication.class)) {
             String basePackage = appClass.getPackageName();
-            MiddlewareApplication application = new MiddlewareApplication(basePackage);//args
+            MiddlewareApplication application = new MiddlewareApplication(basePackage);
             application.start();
         }
     }
@@ -40,12 +40,10 @@ public class MiddlewareApplication {
         LifecycleManager lifecycleManager = new LifecycleManager();
         
         this.invoker = new Invoker(lookupService, extensionService, lifecycleManager);
-        //talvez criar marshaller aqui
     }
 
     private void start() {
         scanAndRegisterComponents();
-        //por enquanto
         run(8080);
     }
 
