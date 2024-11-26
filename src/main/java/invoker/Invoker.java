@@ -81,7 +81,7 @@ public class Invoker {
         Map<String, String> pathVariables = ParamResolver.extractPathVariables(routeTemplate, message.resource());
         Map<String, String> queryParams = ParamResolver.extractQueryParams(message.resource());
 
-        for (Parameter parameter : targetMethod.getParameters()) {
+        for (Parameter parameter : targetMethod.getParameters()) { // TODO: dando erro de null pointer
             if (parameter.isAnnotationPresent(PathVariable.class)) {
                 String pathVariableName = parameter.getAnnotation(PathVariable.class).value();
                 JSONObject pathVariableValue = new JSONObject(pathVariables.get(pathVariableName));
@@ -89,7 +89,8 @@ public class Invoker {
                 params.add(JsonUtil.fromJson(pathVariableValue, parameter.getType()));
             } else if (parameter.isAnnotationPresent(RequestParam.class)) {
                 String requestParamName = parameter.getAnnotation(RequestParam.class).value();
-                JSONObject requestParamValue = new JSONObject(queryParams.get(requestParamName));
+                JSONObject requestParamValue = queryParams.get(requestParamName) == null?
+                        new JSONObject(queryParams.get(requestParamName)) : null;
 
                 params.add(JsonUtil.fromJson(requestParamValue, parameter.getType()));
             } else if (parameter.isAnnotationPresent(RequestBody.class)) {

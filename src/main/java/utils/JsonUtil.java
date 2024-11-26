@@ -16,6 +16,7 @@ public class JsonUtil {
      * @return the deserialized Java object
      */
     public static <T> T fromJson(JSONObject jsonObject, Class<T> clazz) {
+        if (jsonObject == null) return  null;
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             return objectMapper.readValue(jsonObject.toString(), clazz);
