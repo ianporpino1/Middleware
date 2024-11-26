@@ -1,4 +1,4 @@
-﻿package handler.tcp;
+package handler.tcp;
 
 import invoker.Invoker;
 import marshaller.HttpMarshaller;
@@ -17,7 +17,7 @@ class TCP_RequestHandler implements Runnable {
     TCP_RequestHandler(Socket clientSocket, Invoker invoker) {
         this.clientSocket = clientSocket;
         this.invoker = invoker;
-        this.marshaller = new Marshaller();
+        this.marshaller = new HttpMarshaller();
     }
 
     @Override
@@ -26,7 +26,8 @@ class TCP_RequestHandler implements Runnable {
         HTTPMessage httpMessage = readRequest();
 
         //faz o unmarshall ou ja chama o invoker?
-        HTTPMessage response = invoker.invoke(httpMessage);
+//        HTTPMessage response = invoker.invoke(httpMessage);
+        HTTPMessage response = null;
 
         //faz o marshall da resposta
         sendResponse(response);
@@ -45,7 +46,7 @@ class TCP_RequestHandler implements Runnable {
 
     private HTTPMessage readRequest() {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
-            
+
             return marshaller.deserialize(reader);
         } catch (IOException e) {
             throw new RuntimeException(e);
