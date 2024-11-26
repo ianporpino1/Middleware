@@ -11,117 +11,101 @@ import lifecycle.LookupService;
 import marshaller.HttpMarshaller;
 import marshaller.Marshaller;
 import message.HTTPMessage;
-import message.HttpRequest;
+import org.json.JSONObject;
+import utils.JsonUtil;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.net.Socket;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 public class Invoker {
     private Marshaller marshaller;
-    
+
     private final LifecycleManager lifecycleManager;
-    
+
     private final LookupService lookupService;
-    
+
     private final ExtensionService extensionService;
-    
-    
+
+
     public Invoker(LookupService lookupService, ExtensionService extensionService, LifecycleManager lifecycleManager) {
         this.marshaller = new HttpMarshaller();
         this.lifecycleManager = lifecycleManager;
         this.extensionService = extensionService;
         this.lookupService = lookupService;
     }
-    
-    public HTTPMessage invoke(Socket clientSocket) throws Exception {
+
+    public void invoke(Socket clientSocket) throws Exception {
 
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
         HTTPMessage httpMessage = marshaller.deserialize(bufferedReader);
 
-//        String fullRoute = request.getUrl();
-//        String httpMethod = request.getMethod();
-        
-//        Class<?> clazz = lookupService.getRoute(fullRoute);
-//
-//        Method targetMethod = findAnnotatedMethod(clazz, httpMethod, fullRoute);
-//
-//        Object servant = clazz.getConstructor().newInstance();
-//                //lifecycleManager.getInstance(clazz);
-//        try {
-//            var response = new HttpResponse();
-//
-//            //interceptors
-//            boolean test = extensionService.interceptBefore(request, response);
-//            if (!test) {
-//                return response;
-//            }
-//
-//            //TODO: adicionar checagem de parametros do metodo
-//            Object[] params = null;
-//            if(targetMethod.getParameterCount() != 0) {
-//                params = resolveParams(targetMethod, clazz,request);
-//            }
-//
-//            Object result;
-//            if (params == null) {
-//                result = targetMethod.invoke(servant);
-//            } else {
-//                result = targetMethod.invoke(servant, params);
-//            }
-//            //interceptors
-//            //extensionService.interceptAfter(request, response)
-//
-//
-//            response.setBody(result != null ? result.toString() : "null");
-//            response.setStatusCode(200);
-//            response.setStatusMessage("OK");
-            
-            return httpMessage;
+        Class<?> clazz = lookupService.getRoute(httpMessage.resource());
 
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
+        lifecycleManager.registerObject(clazz);
+
+        Object remoteObject = lifecycleManager.getRemoteObject(clazz);
+
+        Method targetMethod = findAnnotatedMethod(clazz, httpMessage.httpMethod(), httpMessage.resource());
+
+        Object[] params = null;
+        if (targetMethod.getParameterCount() != 0) {
+            params = resolveParams(targetMethod, clazz, httpMessage);
+        }
+
+        Object result;
+        if (params == null) {
+            result = targetMethod.invoke(remoteObject);
+        } else {
+            result = targetMethod.invoke(remoteObject, params);
+        }
+
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
+
+        marshaller.serialize(writer, httpMessage);
     }
 
-    private Object[] resolveParams(Method targetMethod, Class<?> clazz,HttpRequest request) {
+    private Object[] resolveParams(Method targetMethod, Class<?> clazz, HTTPMessage message) {
         List<Object> params = new ArrayList<>();
-        
-        String routeTemplate = getRouteTemplate(clazz,targetMethod);
-        Map<String,String> pathVariables = ParamResolver.extractPathVariables(routeTemplate,request.getUrl());
-        System.out.println(pathVariables.get("userId"));
-        Map<String,String> queryParams = ParamResolver.extractQueryParams(request.getUrl());
+
+        String routeTemplate = getRouteTemplate(clazz, targetMethod);
+        Map<String, String> pathVariables = ParamResolver.extractPathVariables(routeTemplate, message.resource());
+        Map<String, String> queryParams = ParamResolver.extractQueryParams(message.resource());
 
         for (Parameter parameter : targetMethod.getParameters()) {
             if (parameter.isAnnotationPresent(PathVariable.class)) {
                 String pathVariableName = parameter.getAnnotation(PathVariable.class).value();
-                String pathVariableValue = pathVariables.get(pathVariableName);
-//                params.add(convertToType(pathVariableValue, parameter.getType()));
+                JSONObject pathVariableValue = new JSONObject(pathVariables.get(pathVariableName));
 
+                params.add(JsonUtil.fromJson(pathVariableValue, parameter.getType()));
             } else if (parameter.isAnnotationPresent(RequestParam.class)) {
                 String requestParamName = parameter.getAnnotation(RequestParam.class).value();
-                String requestParamValue = queryParams.get(requestParamName);
-//                params.add(convertToType(requestParamValue, parameter.getType()));
+                JSONObject requestParamValue = new JSONObject(queryParams.get(requestParamName));
 
+                params.add(JsonUtil.fromJson(requestParamValue, parameter.getType()));
             } else if (parameter.isAnnotationPresent(RequestBody.class)) {
-                String requestBody = request.getBody();
-//                params.add(convertToType(requestBody, parameter.getType()));
+                params.add(JsonUtil.fromJson(message.body(), parameter.getType()));
             }
         }
+
         return params.toArray();
     }
 
     private String getRouteTemplate(Class<?> clazz, Method targetMethod) {
         System.out.println(clazz.getName());
         String classTemplate = clazz.getAnnotation(RequestMapping.class).value();
-        
+
         String methodTemplate = getMethodTemplate(targetMethod);
-        
+
         return classTemplate + methodTemplate;
     }
 
@@ -143,11 +127,11 @@ public class Invoker {
 
     private Method findAnnotatedMethod(Class<?> clazz, String httpMethod, String fullRoute) {
         String baseRoute = clazz.getAnnotation(RequestMapping.class).value();
-        
+
         if (baseRoute.endsWith("/") && fullRoute.startsWith("/")) {
             fullRoute = fullRoute.substring(1);
         }
-        
+
         String methodRoute = fullRoute.substring(baseRoute.length());
         methodRoute = methodRoute.split("\\?")[0];
 
@@ -156,6 +140,7 @@ public class Invoker {
                 return method;
             }
         }
+
         return null;
     }
 
@@ -177,6 +162,7 @@ public class Invoker {
         }
         return false;
     }
+
     private boolean matchesRoute(String route, String routeTemplate) {
         String regex = routeTemplate
                 .replace("{", "(?<")

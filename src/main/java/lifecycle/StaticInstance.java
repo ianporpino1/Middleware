@@ -2,7 +2,7 @@ package lifecycle;
 
 import lifecycle.exceptions.BadConstructorException;
 
-public class StaticInstance extends LivecycleStrategy{
+public class StaticInstance extends LivecycleStrategy {
 
     public StaticInstance(ResourceManagementStrategy resources) {
         super(resources);

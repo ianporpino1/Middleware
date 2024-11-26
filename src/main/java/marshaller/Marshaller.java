@@ -1,6 +1,7 @@
 package marshaller;
 
 import message.HTTPMessage;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

@@ -52,7 +52,6 @@ public class MiddlewareApplication {
     }
 
     private void scanAndRegisterComponents() {
-        //biblioteca p scanear classpath
         Reflections reflections = new Reflections(basePackage, Scanners.TypesAnnotated);
         Set<Class<?>> components = reflections.getTypesAnnotatedWith(Component.class);
 
@@ -61,6 +60,7 @@ public class MiddlewareApplication {
             System.out.println("Componente registrado: " + clazz.getSimpleName());
         }
     }
+
     public void addComponent(Class<?> component) {
         lookupService.registerRoute(component);
     }

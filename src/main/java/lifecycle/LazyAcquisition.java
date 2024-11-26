@@ -2,9 +2,10 @@ package lifecycle;
 
 import lifecycle.exceptions.BadConstructorException;
 
-import java.util.*;
+import java.util.LinkedList;
+import java.util.Queue;
 
-public class LazyAcquisition extends ResourceManagementStrategy{
+public class LazyAcquisition extends ResourceManagementStrategy {
     private final Queue<Object> availableServants;
 
     public LazyAcquisition(Class<?> clazz) throws BadConstructorException {
@@ -15,7 +16,7 @@ public class LazyAcquisition extends ResourceManagementStrategy{
     @Override
     public Object getServant() throws BadConstructorException {
         Object lazyServant = availableServants.poll();
-        if(lazyServant == null){
+        if (lazyServant == null) {
             lazyServant = create();
         }
         return lazyServant;
