@@ -7,11 +7,11 @@ import java.util.Set;
 
 public class LookupService {
     public HashMap<String, Class<?>> routes;
-    
+
     public LookupService() {
         routes = new HashMap<>();
     }
-    
+
     public void registerRoute(Class<?> clazz){
 
         if(clazz.isAnnotationPresent(RequestMapping.class)){
@@ -20,7 +20,7 @@ public class LookupService {
             routes.put(route, clazz);
         }
     }
-    
+
     public Class<?> getRoute(String fullRoute){
         return routes.keySet().stream()
                 .filter(fullRoute::startsWith)
