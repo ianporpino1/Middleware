@@ -1,5 +1,6 @@
 package handler.tcp;
 
+import handler.interfaces.IHandler;
 import invoker.Invoker;
 import lifecycle.exceptions.BadConstructorException;
 import marshaller.HttpMarshaller;
@@ -14,7 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-class TCP_RequestHandler implements Runnable {
+class TCP_RequestHandler implements Runnable, IHandler {
     private Socket clientSocket;
 
     private Invoker invoker;
@@ -29,12 +30,16 @@ class TCP_RequestHandler implements Runnable {
 
     @Override
     public void run() {
+        handle(clientSocket);
+    }
+
+    @Override
+    public void handle(Socket clientSocket) {
         HttpRequest request = readRequest();
-        if(request == null) {
+        if (request == null) {
             sendResponse(null);
             return;
         }
-        //interceptors
 
         HttpResponse response;
         try {
@@ -45,9 +50,6 @@ class TCP_RequestHandler implements Runnable {
             throw new RuntimeException(e);
         }
 
-        //interceptors
-
-        //faz o marshall da resposta
         sendResponse(response);
     }
 
@@ -58,19 +60,19 @@ class TCP_RequestHandler implements Runnable {
                 response.setStatusCode(404);
                 response.setStatusMessage("Not Found");
                 response.setBody("erro");
-                Map<String, String> headers = new HashMap<>();
-                headers.put("Content-Type", "application/json");
-                headers.put("Content-Length", String.valueOf(response.getBody().getBytes(StandardCharsets.UTF_8).length));
-                response.setHeaders(headers);
-            } 
+            }
+            Map<String, String> headers = new HashMap<>();
+            headers.put("Content-Type", "application/json");
+            headers.put("Content-Length", String.valueOf(response.getBody().getBytes().length));
+            response.setHeaders(headers);
             
-            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(this.clientSocket.getOutputStream()));
+            
             String httpResponse = marshaller.serialize(response);
-            System.out.println(httpResponse);
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(this.clientSocket.getOutputStream()));
             writer.write(httpResponse);
             writer.flush();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Erro ao enviar a resposta HTTP", e);
         }
     }
 
@@ -79,26 +81,32 @@ class TCP_RequestHandler implements Runnable {
             BufferedReader reader = new BufferedReader(new InputStreamReader(this.clientSocket.getInputStream()));
             StringBuilder requestBuilder = new StringBuilder();
             String inputLine = reader.readLine();
+
             if (inputLine == null || inputLine.isEmpty()) {
                 return null;
             }
+
             requestBuilder.append(inputLine).append("\r\n");
+            
+            int contentLength = 0;
             String line;
-            while ((line = reader.readLine()) != null) {
+            while ((line = reader.readLine()) != null && !line.isEmpty()) {
                 requestBuilder.append(line).append("\r\n");
-                if (line.isEmpty()) {
-                    break;
+                if (line.toLowerCase().startsWith("content-length:")) {
+                    contentLength = Integer.parseInt(line.split(":")[1].trim());
                 }
             }
-
-            while ((line = reader.readLine()) != null) {
-                requestBuilder.append(line).append("\r\n");
+            
+            if (contentLength > 0) {
+                char[] body = new char[contentLength];
+                reader.read(body, 0, contentLength);
+                requestBuilder.append(body);
             }
 
             String httpRequest = requestBuilder.toString();
             return marshaller.deserialize(httpRequest);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error reading HTTP request", e);
         }
     }
 }

@@ -46,11 +46,9 @@ public class Invoker {
 
         Method targetMethod = findAnnotatedMethod(clazz, httpMethod, fullRoute);
 
-//        lifecycleManager.registerObject(clazz);
-//
-//        Object servant = lifecycleManager.getRemoteObject(clazz);
+        lifecycleManager.registerObject(clazz);
 
-        Object servant = clazz.getConstructor().newInstance();
+        Object servant = lifecycleManager.getRemoteObject(clazz);
         
         try {
             var response = new HttpResponse();

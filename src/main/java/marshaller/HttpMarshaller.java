@@ -15,7 +15,6 @@ public class HttpMarshaller implements Marshaller {
 
     @Override
     public HttpRequest deserialize(String httpString) throws IOException {
-        System.out.println(httpString);
         HttpRequest httpRequest = new HttpRequest();
         httpRequest.setHeaders(new HashMap<>());
 
@@ -28,7 +27,7 @@ public class HttpMarshaller implements Marshaller {
         }
 
         int i = 1;
-        while (i < lines.length && !lines[i].isEmpty()) {
+        while (i < lines.length && !lines[i].startsWith("{")) {
             String[] headerParts = lines[i].split(":", 2);
             if (headerParts.length == 2) {
                 String key = headerParts[0].trim();
@@ -39,11 +38,12 @@ public class HttpMarshaller implements Marshaller {
         }
       
         StringBuilder bodyBuilder = new StringBuilder();
-        for (int j = i + 1; j < lines.length; j++) {
-            bodyBuilder.append(lines[j]).append("\r\n");
+        while (i < lines.length) {
+            String line = lines[i];
+            bodyBuilder.append(line);
+            i++;
         }
         httpRequest.setBody(bodyBuilder.toString().trim());
-
         return httpRequest;
     }
 
