@@ -1,10 +1,12 @@
 package broker;
 
 import annotation.Component;
+import broker.configuration.Configuration;
 import extension.ExtensionService;
 import extension.interceptors.SecurityInterceptor;
 import handler.interfaces.IServerRequestHandler;
-import handler.ServerRequestHandler;
+import handler.tcp.TCP_ServerRequestHandler;
+import handler.udp.UDP_ServerRequestHandler;
 import invoker.Invoker;
 import lifecycle.LifecycleManager;
 import lifecycle.LookupService;
@@ -17,7 +19,7 @@ public class MiddlewareApplication {
     public static void run(Class<?> appClass, String[] args) {
         if (appClass.isAnnotationPresent(annotation.MiddlewareApplication.class)) {
             String basePackage = appClass.getPackageName();
-            MiddlewareApplication application = new MiddlewareApplication(basePackage);
+            MiddlewareApplication application = new MiddlewareApplication(basePackage);//args
             application.start();
         }
     }
@@ -30,25 +32,35 @@ public class MiddlewareApplication {
 
     private final LookupService lookupService;
 
+
     public MiddlewareApplication(String basePackage) {
         this.basePackage = basePackage;
         this.lookupService = new LookupService();
-        
+
         ExtensionService extensionService = new ExtensionService();
         extensionService.addInterceptor(new SecurityInterceptor());
 
         LifecycleManager lifecycleManager = new LifecycleManager();
-        
+
         this.invoker = new Invoker(lookupService, extensionService, lifecycleManager);
     }
 
     private void start() {
         scanAndRegisterComponents();
-        run(8080);
+        int port = Integer.parseInt(Configuration.getProperty("server.port"));
+        String networkProtocol = Configuration.getProperty("server.network.protocol");
+        run(port,networkProtocol);
     }
 
-    public void run(int port) {
-        this.requestHandler = new ServerRequestHandler(port, invoker);
+    public void run(int port, String networkProtocol) {
+        switch (networkProtocol) {
+            case "tcp":
+                this.requestHandler = new TCP_ServerRequestHandler(port, invoker);
+                break;
+            case "udp":
+                this.requestHandler = new UDP_ServerRequestHandler(port, invoker);
+                break;
+        }
     }
 
     private void scanAndRegisterComponents() {
@@ -60,7 +72,6 @@ public class MiddlewareApplication {
             System.out.println("Componente registrado: " + clazz.getSimpleName());
         }
     }
-
     public void addComponent(Class<?> component) {
         lookupService.registerRoute(component);
     }

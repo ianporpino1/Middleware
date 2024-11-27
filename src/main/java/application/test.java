@@ -11,11 +11,9 @@ import annotation.scope.ScopeType;
 import annotation.strategy.CreationStrategy;
 import annotation.strategy.CreationStrategyType;
 
-import java.nio.file.attribute.UserPrincipal;
-
 
 @RequestMapping("/test")
-@Scope(ScopeType.PER_REQUEST)
+@Scope(ScopeType.STATIC_INSTANCE)
 @CreationStrategy(CreationStrategyType.LAZY_ACQUISITION)
 @Component
 public class test {

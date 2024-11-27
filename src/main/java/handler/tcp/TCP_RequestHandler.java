@@ -1,11 +1,18 @@
 package handler.tcp;
 
 import invoker.Invoker;
+import lifecycle.exceptions.BadConstructorException;
 import marshaller.HttpMarshaller;
 import message.HTTPMessage;
+import message.HttpRequest;
+import message.HttpResponse;
 
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 
 class TCP_RequestHandler implements Runnable {
     private Socket clientSocket;
@@ -22,32 +29,74 @@ class TCP_RequestHandler implements Runnable {
 
     @Override
     public void run() {
-        //recebe a request
-        HTTPMessage httpMessage = readRequest();
+        HttpRequest request = readRequest();
+        if(request == null) {
+            sendResponse(null);
+            return;
+        }
+        //interceptors
 
-        //faz o unmarshall ou ja chama o invoker?
-//        HTTPMessage response = invoker.invoke(httpMessage);
-        HTTPMessage response = null;
+        HttpResponse response;
+        try {
+            System.out.println(request);
+            response = invoker.invoke(request);
+        } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException |
+                 BadConstructorException e) {
+            throw new RuntimeException(e);
+        }
+
+        //interceptors
 
         //faz o marshall da resposta
         sendResponse(response);
     }
 
-    private void sendResponse(HTTPMessage response) {
-        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()))) {
-            //n sei se eh a melhor abordagem, pq writer vai ter que usar write()
-            //dentro do marshaller
-            //outra opcao seria mandar pro marshaller o outputstream/inpustream
-            marshaller.serialize(writer, response);
+    private void sendResponse(HttpResponse response) {
+        try {
+            if(response == null) {
+                response = new HttpResponse();
+                response.setStatusCode(404);
+                response.setStatusMessage("Not Found");
+                response.setBody("erro");
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Content-Type", "application/json");
+                headers.put("Content-Length", String.valueOf(response.getBody().getBytes(StandardCharsets.UTF_8).length));
+                response.setHeaders(headers);
+            } 
+            
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(this.clientSocket.getOutputStream()));
+            String httpResponse = marshaller.serialize(response);
+            System.out.println(httpResponse);
+            writer.write(httpResponse);
+            writer.flush();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private HTTPMessage readRequest() {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
+    private HttpRequest readRequest() {
+        try {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(this.clientSocket.getInputStream()));
+            StringBuilder requestBuilder = new StringBuilder();
+            String inputLine = reader.readLine();
+            if (inputLine == null || inputLine.isEmpty()) {
+                return null;
+            }
+            requestBuilder.append(inputLine).append("\r\n");
+            String line;
+            while ((line = reader.readLine()) != null) {
+                requestBuilder.append(line).append("\r\n");
+                if (line.isEmpty()) {
+                    break;
+                }
+            }
 
-            return marshaller.deserialize(reader);
+            while ((line = reader.readLine()) != null) {
+                requestBuilder.append(line).append("\r\n");
+            }
+
+            String httpRequest = requestBuilder.toString();
+            return marshaller.deserialize(httpRequest);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

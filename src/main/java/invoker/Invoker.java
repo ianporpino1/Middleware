@@ -4,26 +4,22 @@ import annotation.parameters.PathVariable;
 import annotation.parameters.RequestBody;
 import annotation.parameters.RequestParam;
 import annotation.web.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import extension.ExtensionService;
 import invoker.resolver.ParamResolver;
 import lifecycle.LifecycleManager;
 import lifecycle.LookupService;
-import marshaller.HttpMarshaller;
+import lifecycle.exceptions.BadConstructorException;
 import marshaller.Marshaller;
-import message.HTTPMessage;
-import org.json.JSONObject;
-import utils.JsonUtil;
+import message.HttpRequest;
+import message.HttpResponse;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Invoker {
@@ -37,67 +33,85 @@ public class Invoker {
 
 
     public Invoker(LookupService lookupService, ExtensionService extensionService, LifecycleManager lifecycleManager) {
-        this.marshaller = new HttpMarshaller();
         this.lifecycleManager = lifecycleManager;
         this.extensionService = extensionService;
         this.lookupService = lookupService;
     }
 
-    public void invoke(Socket clientSocket) throws Exception {
+    public HttpResponse invoke(HttpRequest request) throws BadConstructorException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        String fullRoute = request.getUrl();
+        String httpMethod = request.getMethod();
 
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        Class<?> clazz = lookupService.getRoute(fullRoute);
 
-        HTTPMessage httpMessage = marshaller.deserialize(bufferedReader);
+        Method targetMethod = findAnnotatedMethod(clazz, httpMethod, fullRoute);
 
-        Class<?> clazz = lookupService.getRoute(httpMessage.resource());
+//        lifecycleManager.registerObject(clazz);
+//
+//        Object servant = lifecycleManager.getRemoteObject(clazz);
 
-        lifecycleManager.registerObject(clazz);
+        Object servant = clazz.getConstructor().newInstance();
+        
+        try {
+            var response = new HttpResponse();
 
-        Object remoteObject = lifecycleManager.getRemoteObject(clazz);
+            //interceptors
+            boolean test = extensionService.interceptBefore(request, response);
+            if (!test) {
+                return response;
+            }
 
-        Method targetMethod = findAnnotatedMethod(clazz, httpMessage.httpMethod(), httpMessage.resource());
+            Object[] params = null;
+            if(targetMethod.getParameterCount() != 0) {
+                params = resolveParams(targetMethod, clazz,request);
+            }
 
-        Object[] params = null;
-        if (targetMethod.getParameterCount() != 0) {
-            params = resolveParams(targetMethod, clazz, httpMessage);
+            Object result;
+            if (params == null) {
+                result = targetMethod.invoke(servant);
+            } else {
+                result = targetMethod.invoke(servant, params);
+            }
+            //interceptors
+            //extensionService.interceptAfter(request, response)
+
+
+            response.setBody(result != null ? result.toString() : "null");
+            response.setStatusCode(200);
+            response.setStatusMessage("OK");
+
+            return response;
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        Object result;
-        if (params == null) {
-            result = targetMethod.invoke(remoteObject);
-        } else {
-            result = targetMethod.invoke(remoteObject, params);
-        }
-
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
-
-        marshaller.serialize(writer, httpMessage);
+        return null;
     }
 
-    private Object[] resolveParams(Method targetMethod, Class<?> clazz, HTTPMessage message) {
+    private Object[] resolveParams(Method targetMethod, Class<?> clazz,HttpRequest request) {
         List<Object> params = new ArrayList<>();
 
-        String routeTemplate = getRouteTemplate(clazz, targetMethod);
-        Map<String, String> pathVariables = ParamResolver.extractPathVariables(routeTemplate, message.resource());
-        Map<String, String> queryParams = ParamResolver.extractQueryParams(message.resource());
+        String routeTemplate = getRouteTemplate(clazz,targetMethod);
+        Map<String,String> pathVariables = ParamResolver.extractPathVariables(routeTemplate,request.getUrl());
+        System.out.println(pathVariables.get("userId"));
+        Map<String,String> queryParams = ParamResolver.extractQueryParams(request.getUrl());
 
-        for (Parameter parameter : targetMethod.getParameters()) { // TODO: dando erro de null pointer
+        for (Parameter parameter : targetMethod.getParameters()) {
             if (parameter.isAnnotationPresent(PathVariable.class)) {
                 String pathVariableName = parameter.getAnnotation(PathVariable.class).value();
-                JSONObject pathVariableValue = new JSONObject(pathVariables.get(pathVariableName));
+                String pathVariableValue = pathVariables.get(pathVariableName);
+                params.add(convertToType(pathVariableValue, parameter.getType()));
 
-                params.add(JsonUtil.fromJson(pathVariableValue, parameter.getType()));
             } else if (parameter.isAnnotationPresent(RequestParam.class)) {
                 String requestParamName = parameter.getAnnotation(RequestParam.class).value();
-                JSONObject requestParamValue = queryParams.get(requestParamName) == null?
-                        new JSONObject(queryParams.get(requestParamName)) : null;
+                String requestParamValue = queryParams.get(requestParamName);
+                params.add(convertToType(requestParamValue, parameter.getType()));
 
-                params.add(JsonUtil.fromJson(requestParamValue, parameter.getType()));
             } else if (parameter.isAnnotationPresent(RequestBody.class)) {
-                params.add(JsonUtil.fromJson(message.body(), parameter.getType()));
+                String requestBody = request.getBody();
+                params.add(convertToType(requestBody, parameter.getType()));
             }
         }
-
         return params.toArray();
     }
 
@@ -126,6 +140,30 @@ public class Invoker {
         };
     }
 
+    private Object convertToType(String value, Class<?> targetType) {
+        if (value == null) {
+            return null;
+        }
+
+        return switch (targetType.getName()) {
+            case "java.lang.String" -> value;
+            case "java.lang.Integer" -> Integer.parseInt(value);
+            case "java.lang.Long" -> Long.parseLong(value);
+            case "java.lang.Boolean" -> Boolean.parseBoolean(value);
+            default -> convertJson(value, targetType);
+        };
+    }
+    
+    private Object convertJson(String value, Class<?> targetType){
+        final ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            return objectMapper.readValue(value, targetType);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Erro ao deserializar o valor para " + targetType.getName(), e);
+        }
+    }
+
+
     private Method findAnnotatedMethod(Class<?> clazz, String httpMethod, String fullRoute) {
         String baseRoute = clazz.getAnnotation(RequestMapping.class).value();
 
@@ -141,7 +179,6 @@ public class Invoker {
                 return method;
             }
         }
-
         return null;
     }
 
@@ -163,7 +200,6 @@ public class Invoker {
         }
         return false;
     }
-
     private boolean matchesRoute(String route, String routeTemplate) {
         String regex = routeTemplate
                 .replace("{", "(?<")
