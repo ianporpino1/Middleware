@@ -2,20 +2,19 @@ package lifecycle;
 
 import lifecycle.exceptions.BadConstructorException;
 
-public class StaticInstance extends LivecycleStrategy {
+public class StaticInstance implements LifecycleStrategy {
+    private Object instance;
 
-    public StaticInstance(ResourceManagementStrategy resources) {
-        super(resources);
-        resources.create_servant();
+    @Override
+    public synchronized Object getServant(ResourceStrategy resource) throws BadConstructorException {
+        if (instance == null) {
+            instance = resource.createServant();
+        }
+        return instance;
     }
 
     @Override
-    public Object getServant() throws BadConstructorException {
-        return resources.getServant();
-    }
-
-    @Override
-    public void returnServant(Object servant) {
-        resources.returnServant(servant);
+    public void releaseServant(ResourceStrategy resource, Object servant) {
+        // Nada a fazer porque o objeto vive durante toda aplicação
     }
 }
