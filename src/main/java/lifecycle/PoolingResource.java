@@ -33,7 +33,7 @@ public class PoolingResource implements ResourceStrategy {
 
         lock.lock();
         try {
-            while (pool.isEmpty() && pool.size() >= maxPoolSize) {
+            while (pool.isEmpty() || pool.size() >= maxPoolSize) {
                 poolNotEmpty.await();
             }
             servant = pool.poll();
