@@ -11,6 +11,4 @@ public abstract class LivecycleStrategy {
     public LivecycleStrategy(ResourceManagementStrategy resources) {
         this.resources = resources;
     }
-
-
 }
