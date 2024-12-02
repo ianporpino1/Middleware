@@ -7,7 +7,7 @@ public class StaticInstance implements LifecycleStrategy {
 
     @Override
     public synchronized Object getServant(ResourceStrategy resource) throws BadConstructorException {
-        if (instance == null) {
+        if (instance == null || resource.getClass().getName().equals(PoolingResource.class.getName())) {
             instance = resource.getServant();
         }
         return instance;

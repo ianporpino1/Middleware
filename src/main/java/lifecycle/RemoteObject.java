@@ -22,5 +22,15 @@ public class RemoteObject {
     public void releaseServant(Object servant) {
         strategy.releaseServant(resource, servant);
     }
+
+
+    @Override
+    public String toString() {
+        return "RemoteObject {" +
+                "clazz=" + clazz +
+                ", strategy=" + strategy +
+                ", resource=" + resource +
+                '}';
+    }
 }
 
