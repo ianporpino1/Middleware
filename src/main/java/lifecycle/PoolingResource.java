@@ -2,6 +2,7 @@ package lifecycle;
 
 import lifecycle.exceptions.BadConstructorException;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.Condition;
@@ -16,38 +17,57 @@ public class PoolingResource implements ResourceStrategy {
     private final int maxPoolSize;
     private final Condition poolNotEmpty;
 
+    // criado para testes
+    public PoolingResource(Class<?> clazz, int size) {
+        this.clazz = clazz;
+        this.pool = new ConcurrentLinkedQueue<>();
+        this.lock = new ReentrantLock();
+        this.maxPoolSize = size;
+        this.poolNotEmpty = lock.newCondition();
+
+        try {
+            populatePool(maxPoolSize);
+        } catch (BadConstructorException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public PoolingResource(Class<?> clazz) {
         this.clazz = clazz;
         this.pool = new ConcurrentLinkedQueue<>();
         this.lock = new ReentrantLock();
         this.maxPoolSize = 10;
         this.poolNotEmpty = lock.newCondition();
+
+        try {
+            populatePool(maxPoolSize);
+        } catch (BadConstructorException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void populatePool(int poolSize) throws BadConstructorException {
+        for (int i = 0; i < poolSize; i++) {
+            try {
+                Object servant = clazz.getConstructor().newInstance();
+                pool.add(servant);
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                     NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     @Override
-    public Object createServant() throws BadConstructorException {
-        Object servant = pool.poll();
-        if (servant != null) {
-            return servant;
-        }
-
+    public Object getServant() throws BadConstructorException {
         lock.lock();
         try {
-            while (pool.isEmpty() || pool.size() >= maxPoolSize) {
+            while(pool.isEmpty()) {
                 poolNotEmpty.await();
             }
-            servant = pool.poll();
-            if (servant == null) {
-                try {
-                    servant = clazz.getConstructor().newInstance();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            return servant;
+            return pool.poll();
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Thread interrupted while waiting for a servant.", e);
+            throw new RuntimeException(e);
         } finally {
             lock.unlock();
         }
@@ -59,7 +79,7 @@ public class PoolingResource implements ResourceStrategy {
         lock.lock();
         try {
             pool.offer(servant);
-            poolNotEmpty.signal(); // Notifica threads aguardando por servants
+            poolNotEmpty.signal();
         } finally {
             lock.unlock();
         }

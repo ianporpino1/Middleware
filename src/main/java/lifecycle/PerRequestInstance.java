@@ -6,7 +6,7 @@ public class PerRequestInstance implements LifecycleStrategy {
 
     @Override
     public Object getServant(ResourceStrategy resource) throws BadConstructorException {
-        return resource.createServant();
+        return resource.getServant();
     }
 
     @Override

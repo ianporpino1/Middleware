@@ -8,13 +8,13 @@ public class StaticInstance implements LifecycleStrategy {
     @Override
     public synchronized Object getServant(ResourceStrategy resource) throws BadConstructorException {
         if (instance == null) {
-            instance = resource.createServant();
+            instance = resource.getServant();
         }
         return instance;
     }
 
     @Override
     public void releaseServant(ResourceStrategy resource, Object servant) {
-        // Nada a fazer porque o objeto vive durante toda aplicação
+        resource.releaseServant(servant);
     }
 }
