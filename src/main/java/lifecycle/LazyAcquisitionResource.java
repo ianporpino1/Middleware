@@ -21,6 +21,5 @@ public class LazyAcquisitionResource implements ResourceStrategy {
 
     @Override
     public void releaseServant(Object servant) {
-        
     }
 }

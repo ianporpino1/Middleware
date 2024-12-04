@@ -67,4 +67,17 @@ public class LifecycleManager {
             System.out.println(remoteObject);
         }
     }
+
+    public void releaseRemoteObject(RemoteObject servant) {
+        Set<RemoteObject> objects = remoteObjects.get(servant.getClazz());
+
+        // se for per request e for lazy, eu devo remover ele do set, dado que o contexto dele acabou
+        if (servant.getStrategy().getClass() == PerRequestInstance.class &&
+            servant.getResource().getClass() == LazyAcquisitionResource.class) {
+
+            objects.remove(servant);
+        } else if (servant.getResource().getClass() == PoolingResource.class) {
+            servant.releaseServant(servant);
+        }
+    }
 }

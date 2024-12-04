@@ -18,7 +18,7 @@ public class RemoteObject {
         return strategy.getServant(resource);
     }
 
-    // devolve servant (método chamado quando nao se precisa mais do servant)
+    // devolve servant (funcao chamada quando nao se precisa mais do servant)
     public void releaseServant(Object servant) {
         strategy.releaseServant(resource, servant);
     }
@@ -31,6 +31,16 @@ public class RemoteObject {
                 ", strategy=" + strategy +
                 ", resource=" + resource +
                 '}';
+    }
+
+    public Class<?> getClazz() { return this.clazz; }
+
+    public LifecycleStrategy getStrategy() {
+        return strategy;
+    }
+
+    public ResourceStrategy getResource() {
+        return resource;
     }
 }
 
