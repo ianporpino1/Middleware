@@ -25,8 +25,6 @@ class LifecycleManagerTest {
             lifecycleManager.listAllRemoteObjectsByClass(Dummy.class);
 
             assertSame(s1, s2);
-
-
         } catch (BadConstructorException e) {
             throw new RuntimeException(e);
         }
@@ -66,9 +64,39 @@ class LifecycleManagerTest {
         }
     }
 
+    /*
+    * Testa o comportamento do Per Request x Pooling
+    * */
     @Test
     public void testPerRequestPoolingCreation() {
+        try {
+            Object s1 = lifecycleManager.getRemoteObject(Dummy.class);
+            Object s2 = lifecycleManager.getRemoteObject(Dummy.class);
 
+            System.out.println(s1);
+            System.out.println(s2);
+
+            assertNotSame(s1, s2);
+
+        } catch (BadConstructorException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /*
+     * Testa o comportamento do release para Static x Lazy (não deve fazer nada).
+     */
+    @Test
+    public void testReleaseStaticLazy() {
+        try {
+            Object servant = lifecycleManager.getRemoteObject(Dummy.class);
+            lifecycleManager.listAllRemoteObjectsByClass(Dummy.class);
+            lifecycleManager.releaseRemoteObject(servant);
+            lifecycleManager.listAllRemoteObjectsByClass(Dummy.class);
+
+        } catch (BadConstructorException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
 

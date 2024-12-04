@@ -7,6 +7,7 @@ import annotation.strategy.CreationStrategy;
 import annotation.strategy.CreationStrategyType;
 import lifecycle.exceptions.BadConstructorException;
 
+import java.rmi.Remote;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -68,16 +69,19 @@ public class LifecycleManager {
         }
     }
 
-    public void releaseRemoteObject(RemoteObject servant) {
-        Set<RemoteObject> objects = remoteObjects.get(servant.getClazz());
+    public void releaseRemoteObject(Object obj) {
+        Set<RemoteObject> objects = remoteObjects.get(obj.getClass());
 
-        // se for per request e for lazy, eu devo remover ele do set, dado que o contexto dele acabou
-        if (servant.getStrategy().getClass() == PerRequestInstance.class &&
-            servant.getResource().getClass() == LazyAcquisitionResource.class) {
+        for (RemoteObject servant : objects) {
+            if (servant.getClazz().equals(obj.getClass())) {
+                if (servant.getStrategy().getClass() == PerRequestInstance.class &&
+                        servant.getResource().getClass() == LazyAcquisitionResource.class) {
 
-            objects.remove(servant);
-        } else if (servant.getResource().getClass() == PoolingResource.class) {
-            servant.releaseServant(servant);
+                    objects.remove(servant);
+                } else if (servant.getResource().getClass() == PoolingResource.class) {
+                    servant.releaseServant(servant);
+                }
+            }
         }
     }
 }
