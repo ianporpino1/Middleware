@@ -71,6 +71,7 @@ class TCP_RequestHandler implements Runnable, IHandler {
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(this.clientSocket.getOutputStream()));
             writer.write(httpResponse);
             writer.flush();
+            writer.close();
         } catch (IOException e) {
             throw new RuntimeException("Erro ao enviar a resposta HTTP", e);
         }
