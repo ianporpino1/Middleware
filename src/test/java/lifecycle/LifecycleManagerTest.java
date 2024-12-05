@@ -93,7 +93,6 @@ class LifecycleManagerTest {
             lifecycleManager.listAllRemoteObjectsByClass(Dummy.class);
             lifecycleManager.releaseRemoteObject(servant);
             lifecycleManager.listAllRemoteObjectsByClass(Dummy.class);
-
         } catch (BadConstructorException e) {
             throw new RuntimeException(e);
         }
