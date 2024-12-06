@@ -55,9 +55,11 @@ public class MiddlewareApplication {
     public void run(int port, String networkProtocol) {
         switch (networkProtocol) {
             case "tcp":
+                System.out.println("Starting TCP Server");
                 this.requestHandler = new TCP_ServerRequestHandler(port, invoker);
                 break;
             case "udp":
+                System.out.println("Starting UDP Server");
                 this.requestHandler = new UDP_ServerRequestHandler(port, invoker);
                 break;
         }

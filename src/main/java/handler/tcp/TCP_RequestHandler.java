@@ -30,11 +30,11 @@ class TCP_RequestHandler implements Runnable, IHandler {
 
     @Override
     public void run() {
-        handle(clientSocket);
+        handle();
     }
 
     @Override
-    public void handle(Socket clientSocket) {
+    public void handle() {
         HttpRequest request = readRequest();
         if (request == null) {
             sendResponse(null);
@@ -43,7 +43,6 @@ class TCP_RequestHandler implements Runnable, IHandler {
 
         HttpResponse response;
         try {
-            System.out.println(request);
             response = invoker.invoke(request);
         } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException |
                  BadConstructorException e) {

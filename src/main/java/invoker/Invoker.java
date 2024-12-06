@@ -46,18 +46,16 @@ public class Invoker {
 
         Method targetMethod = findAnnotatedMethod(clazz, httpMethod, fullRoute);
 
-        lifecycleManager.registerObject(clazz);
-
         Object servant = lifecycleManager.getRemoteObject(clazz);
         
         try {
             var response = new HttpResponse();
 
             //interceptors
-            boolean test = extensionService.interceptBefore(request, response);
-            if (!test) {
-                return response;
-            }
+//            boolean test = extensionService.interceptBefore(request, response);
+//            if (!test) {
+//                return response;
+//            }
 
             Object[] params = null;
             if(targetMethod.getParameterCount() != 0) {
@@ -91,7 +89,6 @@ public class Invoker {
 
         String routeTemplate = getRouteTemplate(clazz,targetMethod);
         Map<String,String> pathVariables = ParamResolver.extractPathVariables(routeTemplate,request.getUrl());
-        System.out.println(pathVariables.get("userId"));
         Map<String,String> queryParams = ParamResolver.extractQueryParams(request.getUrl());
 
         for (Parameter parameter : targetMethod.getParameters()) {
@@ -114,7 +111,6 @@ public class Invoker {
     }
 
     private String getRouteTemplate(Class<?> clazz, Method targetMethod) {
-        System.out.println(clazz.getName());
         String classTemplate = clazz.getAnnotation(RequestMapping.class).value();
 
         String methodTemplate = getMethodTemplate(targetMethod);
