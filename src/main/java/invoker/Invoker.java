@@ -80,6 +80,8 @@ public class Invoker {
 
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            lifecycleManager.releaseRemoteObject(servant);
         }
         return null;
     }
