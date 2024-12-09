@@ -1,4 +1,4 @@
-package invoker.resolver;
+package invoker;
 
 import java.util.ArrayList;
 import java.util.HashMap;

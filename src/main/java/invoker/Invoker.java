@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import exceptions.InvokerException;
 import exceptions.MarshallerException;
 import extension.ExtensionService;
-import invoker.resolver.ParamResolver;
 import lifecycle.LifecycleManager;
 import lifecycle.LookupService;
 import exceptions.BadConstructorException;
@@ -25,18 +24,18 @@ import java.util.regex.Pattern;
 
 public class Invoker {
     private Marshaller marshaller;
-
     private final LifecycleManager lifecycleManager;
-
     private final LookupService lookupService;
-
     private final ExtensionService extensionService;
-
+    private RouteResolver routeResolver;
+    private ParamConverter paramConverter;
 
     public Invoker(LookupService lookupService, ExtensionService extensionService, LifecycleManager lifecycleManager) {
         this.lifecycleManager = lifecycleManager;
         this.extensionService = extensionService;
         this.lookupService = lookupService;
+        this.routeResolver = new RouteResolver();
+        this.paramConverter = new ParamConverter();
     }
 
     public HttpResponse invoke(HttpRequest request) throws BadConstructorException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
@@ -44,8 +43,7 @@ public class Invoker {
         String httpMethod = request.getMethod();
 
         Class<?> clazz = lookupService.getRoute(fullRoute);
-
-        Method targetMethod = findAnnotatedMethod(clazz, httpMethod, fullRoute);
+        Method targetMethod = routeResolver.findAnnotatedMethod(clazz, httpMethod, fullRoute);
 
         Object servant = lifecycleManager.getRemoteObject(clazz);
         
@@ -58,24 +56,18 @@ public class Invoker {
 //                return response;
 //            }
 
-            Object[] params = null;
-            if(targetMethod.getParameterCount() != 0) {
-                params = resolveParams(targetMethod, clazz,request);
-            }
+            Object[] params = targetMethod.getParameterCount() != 0
+                    ? resolveParams(targetMethod, clazz, request)
+                    : null;
 
-            Object result;
-            if (params == null) {
-                result = targetMethod.invoke(servant);
-            } else {
-                result = targetMethod.invoke(servant, params);
-            }
+            Object result = (params == null)
+                    ? targetMethod.invoke(servant)
+                    : targetMethod.invoke(servant, params);
             //interceptors
             //extensionService.interceptAfter(request, response)
-
-
             response.setBody(result != null ? result.toString() : "null");
-            response.setStatusCode(200);
-            response.setStatusMessage("OK");
+            response.setStatusCode(result != null ? 200 : 500);
+            response.setStatusMessage(result != null ? "OK" : "Internal Server Error");
 
             return response;
 
@@ -97,16 +89,16 @@ public class Invoker {
             if (parameter.isAnnotationPresent(PathVariable.class)) {
                 String pathVariableName = parameter.getAnnotation(PathVariable.class).value();
                 String pathVariableValue = pathVariables.get(pathVariableName);
-                params.add(convertToType(pathVariableValue, parameter.getType()));
+                params.add(paramConverter.convertToType(pathVariableValue, parameter.getType()));
 
             } else if (parameter.isAnnotationPresent(RequestParam.class)) {
                 String requestParamName = parameter.getAnnotation(RequestParam.class).value();
                 String requestParamValue = queryParams.get(requestParamName);
-                params.add(convertToType(requestParamValue, parameter.getType()));
+                params.add(paramConverter.convertToType(requestParamValue, parameter.getType()));
 
             } else if (parameter.isAnnotationPresent(RequestBody.class)) {
                 String requestBody = request.getBody();
-                params.add(convertToType(requestBody, parameter.getType()));
+                params.add(paramConverter.convertToType(requestBody, parameter.getType()));
             }
         }
         return params.toArray();
@@ -123,7 +115,7 @@ public class Invoker {
     public String getMethodTemplate(Method targetMethod) {
         var annotations = targetMethod.getAnnotations();
         if (annotations.length != 1) {
-            throw new IllegalArgumentException("O método deve ter exatamente uma anotação HTTP!");
+            throw new InvokerException("O método deve ter exatamente uma anotação HTTP!");
         }
 
         var annotation = annotations[0];
@@ -132,81 +124,7 @@ public class Invoker {
             case Post post -> post.value();
             case Put put -> put.value();
             case Delete delete -> delete.value();
-            default -> throw new IllegalStateException("Anotação HTTP desconhecida: " + annotation);
+            default -> throw new InvokerException("Anotação HTTP desconhecida: " + annotation);
         };
     }
-
-    private Object convertToType(String value, Class<?> targetType) {
-        if (value == null) {
-            return null;
-        }
-
-        return switch (targetType.getName()) {
-            case "java.lang.String" -> value;
-            case "java.lang.Integer" -> Integer.parseInt(value);
-            case "java.lang.Long" -> Long.parseLong(value);
-            case "java.lang.Boolean" -> Boolean.parseBoolean(value);
-            default -> convertJson(value, targetType);
-        };
-    }
-    
-    private Object convertJson(String value, Class<?> targetType){
-        final ObjectMapper objectMapper = new ObjectMapper();
-        try {
-            return objectMapper.readValue(value, targetType);
-        } catch (IOException e) {
-            throw new MarshallerException("Erro ao deserializar o valor para " + targetType.getName(), e.getCause());
-        }
-    }
-
-
-    private Method findAnnotatedMethod(Class<?> clazz, String httpMethod, String fullRoute) {
-        String baseRoute = clazz.getAnnotation(RequestMapping.class).value();
-
-        if (baseRoute.endsWith("/") && fullRoute.startsWith("/")) {
-            fullRoute = fullRoute.substring(1);
-        }
-
-        String methodRoute = fullRoute.substring(baseRoute.length());
-        methodRoute = methodRoute.split("\\?")[0];
-
-        for (Method method : clazz.getDeclaredMethods()) {
-            if (matchesAnnotation(method, httpMethod, methodRoute)) {
-                return method;
-            }
-        }
-        return null;
-    }
-
-    private boolean matchesAnnotation(Method method, String httpMethod, String route) {
-        switch (httpMethod) {
-            case "GET":
-                if (method.isAnnotationPresent(Get.class)) {
-                    String routeTemplate = method.getAnnotation(Get.class).value();
-                    return matchesRoute(route, routeTemplate);
-                }
-                break;
-            case "POST":
-                if (method.isAnnotationPresent(Post.class)) {
-                    String routeTemplate = method.getAnnotation(Post.class).value();
-                    return matchesRoute(route, routeTemplate);
-                }
-                break;
-            // Adicione mais casos para PUT, DELETE, etc.
-        }
-        return false;
-    }
-    private boolean matchesRoute(String route, String routeTemplate) {
-        String regex = routeTemplate
-                .replace("{", "(?<")
-                .replace("}", ">[a-zA-Z0-9]+)")
-                .replace("/", "\\/")
-                + "$";
-
-
-        Pattern pattern = Pattern.compile(regex);
-
-        return pattern.matcher(route).matches();
-    }
-
 }

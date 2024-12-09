@@ -55,13 +55,13 @@ class TCP_RequestHandler implements Runnable, IHandler {
         try {
             if(response == null) {
                 response = new HttpResponse();
-                response.setStatusCode(404);
-                response.setStatusMessage("Not Found");
-                response.setBody("erro");
+                response.setStatusCode(500);
+                response.setStatusMessage("Internal Server Error");
             }
             Map<String, String> headers = new HashMap<>();
             headers.put("Content-Type", "application/json");
-            headers.put("Content-Length", String.valueOf(response.getBody().getBytes().length));
+            headers.put("Content-Length", String.valueOf(
+                    response.getBody() != null ? response.getBody().getBytes().length : 0));
             response.setHeaders(headers);
             
             
