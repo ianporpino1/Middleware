@@ -1,6 +1,5 @@
 package extension;
 
-import extension.interceptors.Interceptor;
 import message.HttpResponse;
 
 import message.HttpRequest;
@@ -8,21 +7,35 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ExtensionService {
-    List<Interceptor> interceptors; //nao eh thread safe
+    private final List<Extension> extensions; //nao eh thread safe
     
     public ExtensionService() {
-        interceptors = new ArrayList<>();
+        extensions = new ArrayList<>();
     }
-    public void addInterceptor(Interceptor interceptor) {
-        interceptors.add(interceptor);
+
+    public void registerExtension(Extension extension) {
+        extensions.add(extension);
     }
-    public void removeInterceptor(Interceptor interceptor) {
-        interceptors.remove(interceptor);
+
+    public List<Extension> getExtensions() {
+        return extensions;
     }
-    public boolean interceptBefore(HttpRequest request, HttpResponse response) {
-        return interceptors.stream().allMatch(interceptor -> interceptor.verifyBefore(request, response));
+
+    public void invokeBefore(HttpRequest request, HttpResponse response) {
+        for (Extension extension : extensions) {
+            extension.beforeInvoke(request, response);
+        }
     }
-    public void interceptAfter(HttpRequest request, HttpResponse response) {
-        interceptors.forEach(interceptor -> interceptor.verifyAfter(request, response));
+
+    public void invokeAfter(HttpRequest request, HttpResponse response) {
+        for (Extension extension : extensions) {
+            extension.afterInvoke(request, response);
+        }
+    }
+
+    public void invokeOnError(HttpRequest request, HttpResponse response, Exception e) {
+        for (Extension extension : extensions) {
+            extension.onError(request, response, e);
+        }
     }
 }

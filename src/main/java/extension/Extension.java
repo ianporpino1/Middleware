@@ -1,11 +1,11 @@
-package extension.interceptors;
+package extension;
 
 import message.HttpResponse;
 
 import message.HttpRequest;
 
 public interface Extension {
-    void verifyBefore(HttpRequest request, HttpResponse response);
-    void verifyAfter(HttpRequest request, HttpResponse response);
+    void beforeInvoke(HttpRequest request, HttpResponse response);
+    void afterInvoke(HttpRequest request, HttpResponse response);
     void onError(HttpRequest request, HttpResponse response, Exception e);
 }
