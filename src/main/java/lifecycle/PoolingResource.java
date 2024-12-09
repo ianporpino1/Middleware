@@ -2,6 +2,7 @@ package lifecycle;
 
 import lifecycle.exceptions.BadConstructorException;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -16,14 +17,16 @@ public class PoolingResource implements ResourceStrategy {
     private final Lock lock;
     private final int maxPoolSize;
     private final Condition poolNotEmpty;
+    private final LifecycleManager lifecycleManager;
 
     // criado para testes
-    public PoolingResource(Class<?> clazz, int size) {
+    public PoolingResource(Class<?> clazz, int size, LifecycleManager lifecycleManager) {
         this.clazz = clazz;
         this.pool = new ConcurrentLinkedQueue<>();
         this.lock = new ReentrantLock();
         this.maxPoolSize = size;
         this.poolNotEmpty = lock.newCondition();
+        this.lifecycleManager = lifecycleManager;
 
         try {
             populatePool(maxPoolSize);
@@ -32,12 +35,13 @@ public class PoolingResource implements ResourceStrategy {
         }
     }
 
-    public PoolingResource(Class<?> clazz) {
+    public PoolingResource(Class<?> clazz, LifecycleManager lifecycleManager) {
         this.clazz = clazz;
         this.pool = new ConcurrentLinkedQueue<>();
         this.lock = new ReentrantLock();
         this.maxPoolSize = 10;
         this.poolNotEmpty = lock.newCondition();
+        this.lifecycleManager = lifecycleManager;
 
         try {
             populatePool(maxPoolSize);
@@ -48,13 +52,24 @@ public class PoolingResource implements ResourceStrategy {
 
     private void populatePool(int poolSize) throws BadConstructorException {
         for (int i = 0; i < poolSize; i++) {
-            try {
-                Object servant = clazz.getConstructor().newInstance();
-                pool.add(servant);
-            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                     NoSuchMethodException e) {
-                throw new RuntimeException(e);
+            Object servant = createServant();
+            pool.add(servant);
+        }
+    }
+
+    private Object createServant() throws BadConstructorException {
+        try {
+            Constructor<?> constructor = clazz.getDeclaredConstructors()[0];
+            Class<?>[] parameterTypes = constructor.getParameterTypes();
+            Object[] parameters = new Object[parameterTypes.length];
+
+            for (int i = 0; i < parameterTypes.length; i++) {
+                parameters[i] = lifecycleManager.getRemoteObject(parameterTypes[i]);
             }
+
+            return constructor.newInstance(parameters);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 

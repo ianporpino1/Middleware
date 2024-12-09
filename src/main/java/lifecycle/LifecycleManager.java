@@ -47,14 +47,14 @@ public class LifecycleManager {
         Scope scope = clazz.getAnnotation(Scope.class);
         CreationStrategy creationStrategy = clazz.getAnnotation(CreationStrategy.class);
 
-        LifecycleStrategy strategy = (scope != null &&scope.value() == ScopeType.PER_REQUEST) ?
+        LifecycleStrategy strategy = (scope != null && scope.value() == ScopeType.PER_REQUEST) ?
                         new PerRequestInstance() :
                         new StaticInstance();
 
         ResourceStrategy resource =
                 (creationStrategy != null && creationStrategy.value() == CreationStrategyType.POOLING) ?
-                        new PoolingResource(clazz) :
-                        new LazyAcquisitionResource(clazz);
+                        new PoolingResource(clazz, this) :
+                        new LazyAcquisitionResource(clazz, this);
 
         RemoteObject remoteObject = new RemoteObject(clazz, strategy, resource);
         this.remoteObjects.get(clazz).add(remoteObject);
