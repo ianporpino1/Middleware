@@ -18,10 +18,22 @@ import annotation.strategy.CreationStrategyType;
 @Component
 public class test {
 
+    private TestService service;
+
+    public test(TestService service) {
+        this.service = service;
+    }
+
     @Get("/hello/{userId}")
     //@Secured anotacao que forcaria requisicao ter token
-    public String hello(@RequestParam("name") String name, @PathVariable("userId") String userId,@RequestBody User user) {
+    public String hello(@RequestParam("name") String name, @PathVariable("userId") String userId
+            ,@RequestBody User user) {
         return "Hello "  + user.name + " with password " + user.password + " with name " + name + " with id " + userId ;
+    }
+
+    @Get("/hi")
+    public String hi() {
+        return service.hi();
     }
 
 }
