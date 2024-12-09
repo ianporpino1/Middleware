@@ -49,10 +49,10 @@ public class MiddlewareApplication {
         scanAndRegisterComponents();
         int port = Integer.parseInt(Configuration.getProperty("server.port"));
         String networkProtocol = Configuration.getProperty("server.network.protocol");
-        run(port,networkProtocol);
+        launchRequestHandler(port,networkProtocol);
     }
 
-    public void run(int port, String networkProtocol) {
+    public void launchRequestHandler(int port, String networkProtocol) {
         switch (networkProtocol) {
             case "tcp":
                 System.out.println("Starting TCP Server");

@@ -10,7 +10,7 @@ public class Configuration {
     static {
         try (InputStream input = Configuration.class.getClassLoader().getResourceAsStream("application.properties")) {
             if (input == null) {
-                throw new RuntimeException("application.properties n encontrado");
+                throw new RuntimeException("application.properties não encontrado");
             }
             properties.load(input);
         } catch (IOException ex) {
