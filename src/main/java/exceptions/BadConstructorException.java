@@ -1,6 +1,5 @@
-package lifecycle.exceptions;
+package exceptions;
 
-import java.lang.reflect.Constructor;
 import java.util.Arrays;
 
 public class BadConstructorException extends Exception{

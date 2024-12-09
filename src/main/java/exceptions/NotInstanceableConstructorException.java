@@ -1,4 +1,4 @@
-package lifecycle.exceptions;
+package exceptions;
 
 import java.lang.reflect.Constructor;
 

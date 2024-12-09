@@ -1,6 +1,4 @@
-package lifecycle.exceptions;
-
-import java.lang.reflect.Constructor;
+package exceptions;
 
 public class NoConstructorException extends BadConstructorException{
     public NoConstructorException(Class<?> clazz, Class<?>[] parameterTypes) {
