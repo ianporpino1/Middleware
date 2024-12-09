@@ -39,22 +39,17 @@ public class Invoker {
     }
 
     public HttpResponse invoke(HttpRequest request) throws BadConstructorException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        var response = new HttpResponse();
         String fullRoute = request.getUrl();
         String httpMethod = request.getMethod();
 
+        extensionService.invokeBefore(request, response);
+
         Class<?> clazz = lookupService.getRoute(fullRoute);
         Method targetMethod = routeResolver.findAnnotatedMethod(clazz, httpMethod, fullRoute);
-
         Object servant = lifecycleManager.getRemoteObject(clazz);
         
         try {
-            var response = new HttpResponse();
-
-            //interceptors
-//            boolean test = extensionService.interceptBefore(request, response);
-//            if (!test) {
-//                return response;
-//            }
 
             Object[] params = targetMethod.getParameterCount() != 0
                     ? resolveParams(targetMethod, clazz, request)
@@ -63,12 +58,11 @@ public class Invoker {
             Object result = (params == null)
                     ? targetMethod.invoke(servant)
                     : targetMethod.invoke(servant, params);
-            //interceptors
-            //extensionService.interceptAfter(request, response)
+
             response.setBody(result != null ? result.toString() : "null");
             response.setStatusCode(result != null ? 200 : 500);
             response.setStatusMessage(result != null ? "OK" : "Internal Server Error");
-
+            extensionService.invokeAfter(request, response);
             return response;
 
         } catch (Exception e) {

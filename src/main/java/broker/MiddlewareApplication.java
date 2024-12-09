@@ -3,7 +3,7 @@ package broker;
 import annotation.Component;
 import broker.configuration.Configuration;
 import extension.ExtensionService;
-import extension.interceptors.SecurityInterceptor;
+import extension.LoggingExtension;
 import handler.interfaces.IServerRequestHandler;
 import handler.tcp.TCP_ServerRequestHandler;
 import handler.udp.UDP_ServerRequestHandler;
@@ -38,7 +38,7 @@ public class MiddlewareApplication {
         this.lookupService = new LookupService();
 
         ExtensionService extensionService = new ExtensionService();
-        extensionService.addInterceptor(new SecurityInterceptor());
+        extensionService.registerExtension(new LoggingExtension());
 
         LifecycleManager lifecycleManager = new LifecycleManager();
 
