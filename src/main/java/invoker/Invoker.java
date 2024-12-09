@@ -5,11 +5,13 @@ import annotation.parameters.RequestBody;
 import annotation.parameters.RequestParam;
 import annotation.web.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import exceptions.InvokerException;
+import exceptions.MarshallerException;
 import extension.ExtensionService;
 import invoker.resolver.ParamResolver;
 import lifecycle.LifecycleManager;
 import lifecycle.LookupService;
-import lifecycle.exceptions.BadConstructorException;
+import exceptions.BadConstructorException;
 import marshaller.Marshaller;
 import message.HttpRequest;
 import message.HttpResponse;
@@ -19,7 +21,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.*;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Invoker {
@@ -79,11 +80,10 @@ public class Invoker {
             return response;
 
         } catch (Exception e) {
-            e.printStackTrace();
+           throw new InvokerException(e.getMessage());
         } finally {
             lifecycleManager.releaseRemoteObject(servant);
         }
-        return null;
     }
 
     private Object[] resolveParams(Method targetMethod, Class<?> clazz,HttpRequest request) {
@@ -155,7 +155,7 @@ public class Invoker {
         try {
             return objectMapper.readValue(value, targetType);
         } catch (IOException e) {
-            throw new IllegalArgumentException("Erro ao deserializar o valor para " + targetType.getName(), e);
+            throw new MarshallerException("Erro ao deserializar o valor para " + targetType.getName(), e.getCause());
         }
     }
 

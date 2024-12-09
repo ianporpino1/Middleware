@@ -1,6 +1,6 @@
 package lifecycle;
 
-import lifecycle.exceptions.BadConstructorException;
+import exceptions.BadConstructorException;
 
 public class StaticInstance implements LifecycleStrategy {
     private Object instance;

@@ -1,5 +1,6 @@
 package handler.udp;
 
+import exceptions.ServerRequestHandlerException;
 import handler.interfaces.IServerRequestHandler;
 import invoker.Invoker;
 
@@ -40,7 +41,7 @@ public class UDP_ServerRequestHandler implements IServerRequestHandler {
         try {
             this.socket = new DatagramSocket(port);
         } catch (SocketException e) {
-            e.printStackTrace();
+            throw new ServerRequestHandlerException(e.getMessage());
         }
         
     }

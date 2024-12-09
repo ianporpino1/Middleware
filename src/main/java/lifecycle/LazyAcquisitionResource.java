@@ -1,6 +1,6 @@
 package lifecycle;
 
-import lifecycle.exceptions.BadConstructorException;
+import exceptions.BadConstructorException;
 
 import java.lang.reflect.Constructor;
 

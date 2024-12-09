@@ -1,9 +1,8 @@
 package lifecycle;
 
-import lifecycle.exceptions.BadConstructorException;
+import exceptions.BadConstructorException;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.Condition;

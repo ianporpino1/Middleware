@@ -5,12 +5,9 @@ import annotation.scope.Scope;
 import annotation.scope.ScopeType;
 import annotation.strategy.CreationStrategy;
 import annotation.strategy.CreationStrategyType;
-import lifecycle.exceptions.BadConstructorException;
+import exceptions.BadConstructorException;
 
-import java.rmi.Remote;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 /*
 * Classe responsável por gerenciar o ciclo de vida dos objetos remotos.

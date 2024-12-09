@@ -1,6 +1,7 @@
 package lifecycle;
 
 import annotation.web.RequestMapping;
+import exceptions.LookupException;
 
 import java.util.HashMap;
 import java.util.Set;
@@ -26,6 +27,6 @@ public class LookupService {
                 .filter(fullRoute::startsWith)
                 .map(routes::get)
                 .findFirst()
-                .orElse(null);
+                .orElseThrow(() -> new LookupException(fullRoute));
     }
 }

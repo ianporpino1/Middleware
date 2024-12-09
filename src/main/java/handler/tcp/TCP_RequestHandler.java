@@ -1,26 +1,25 @@
 package handler.tcp;
 
+import exceptions.ServerRequestHandlerException;
 import handler.interfaces.IHandler;
 import invoker.Invoker;
-import lifecycle.exceptions.BadConstructorException;
+import exceptions.BadConstructorException;
 import marshaller.HttpMarshaller;
-import message.HTTPMessage;
 import message.HttpRequest;
 import message.HttpResponse;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
 class TCP_RequestHandler implements Runnable, IHandler {
-    private Socket clientSocket;
+    private final Socket clientSocket;
 
-    private Invoker invoker;
+    private final Invoker invoker;
 
-    private HttpMarshaller marshaller;
+    private final HttpMarshaller marshaller;
 
     TCP_RequestHandler(Socket clientSocket, Invoker invoker) {
         this.clientSocket = clientSocket;
@@ -46,7 +45,7 @@ class TCP_RequestHandler implements Runnable, IHandler {
             response = invoker.invoke(request);
         } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException |
                  BadConstructorException e) {
-            throw new RuntimeException(e);
+            throw new ServerRequestHandlerException(e.getMessage());
         }
 
         sendResponse(response);
@@ -72,7 +71,7 @@ class TCP_RequestHandler implements Runnable, IHandler {
             writer.flush();
             writer.close();
         } catch (IOException e) {
-            throw new RuntimeException("Erro ao enviar a resposta HTTP", e);
+            throw new ServerRequestHandlerException("Erro ao enviar a resposta HTTP: " + e.getMessage());
         }
     }
 
@@ -106,7 +105,7 @@ class TCP_RequestHandler implements Runnable, IHandler {
             String httpRequest = requestBuilder.toString();
             return marshaller.deserialize(httpRequest);
         } catch (IOException e) {
-            throw new RuntimeException("Error reading HTTP request", e);
+            throw new ServerRequestHandlerException("Error reading HTTP request" + e.getMessage());
         }
     }
 }

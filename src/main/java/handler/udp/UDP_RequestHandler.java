@@ -1,8 +1,9 @@
 package handler.udp;
 
+import exceptions.ServerRequestHandlerException;
 import handler.interfaces.IHandler;
 import invoker.Invoker;
-import lifecycle.exceptions.BadConstructorException;
+import exceptions.BadConstructorException;
 import marshaller.HttpMarshaller;
 import message.HttpRequest;
 import message.HttpResponse;
@@ -42,7 +43,7 @@ class UDP_RequestHandler implements Runnable, IHandler {
             response = invoker.invoke(request);
         } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException |
                  BadConstructorException e) {
-            throw new RuntimeException(e);
+            throw new ServerRequestHandlerException(e.getMessage());
         }
 
         sendResponse(response);
@@ -57,7 +58,7 @@ class UDP_RequestHandler implements Runnable, IHandler {
         try{
             socket.send(responsePacket);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new ServerRequestHandlerException("Erro ao enviar resposta: "+e.getMessage());
         }
     }
 
@@ -66,7 +67,7 @@ class UDP_RequestHandler implements Runnable, IHandler {
         try{
             return marshaller.deserialize(httpString);
         } catch (IOException e) {
-            throw new RuntimeException("Error reading HTTP request", e);
+            throw new ServerRequestHandlerException("Erro ao ler request: " + e.getMessage());
         }
     }
 

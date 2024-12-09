@@ -1,5 +1,7 @@
 package broker.configuration;
 
+import exceptions.ConfigurationException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -10,11 +12,12 @@ public class Configuration {
     static {
         try (InputStream input = Configuration.class.getClassLoader().getResourceAsStream("application.properties")) {
             if (input == null) {
-                throw new RuntimeException("application.properties não encontrado");
+                throw new ConfigurationException("application.properties não encontrado");
             }
             properties.load(input);
         } catch (IOException ex) {
-            ex.printStackTrace();
+            throw new ConfigurationException("Tentativa de leitura de arquivo de configuração " +
+                                                     "falhou");
         }
     }
 

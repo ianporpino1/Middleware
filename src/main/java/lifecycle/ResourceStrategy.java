@@ -1,6 +1,6 @@
 package lifecycle;
 
-import lifecycle.exceptions.BadConstructorException;
+import exceptions.BadConstructorException;
 
 public interface ResourceStrategy {
     Object getServant() throws BadConstructorException;

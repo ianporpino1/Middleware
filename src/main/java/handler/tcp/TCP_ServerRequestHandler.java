@@ -1,5 +1,6 @@
 package handler.tcp;
 
+import exceptions.ServerRequestHandlerException;
 import handler.interfaces.IServerRequestHandler;
 import invoker.Invoker;
 
@@ -22,6 +23,7 @@ public class TCP_ServerRequestHandler implements IServerRequestHandler {
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 Socket clientSocket = serverSocket.accept();
+                System.out.println("Accepted connection from: " + clientSocket.getRemoteSocketAddress());
                 executorService.execute(new TCP_RequestHandler(clientSocket, invoker));
             } catch (IOException e) {
                 if (serverSocket.isClosed()) {
@@ -35,7 +37,7 @@ public class TCP_ServerRequestHandler implements IServerRequestHandler {
         try {
             this.serverSocket = new ServerSocket(port);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new ServerRequestHandlerException(e.getMessage());
         }
     }
 }
