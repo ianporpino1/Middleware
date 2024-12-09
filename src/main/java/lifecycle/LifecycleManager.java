@@ -20,23 +20,21 @@ import java.util.concurrent.CopyOnWriteArraySet;
 *
 * */
 public class LifecycleManager {
-    private final ConcurrentHashMap<Class<?>, Set<RemoteObject>> remoteObjects;
+    private final ConcurrentHashMap<Class<?>,RemoteObject> remoteObjects;
 
     public LifecycleManager() {
         remoteObjects = new ConcurrentHashMap<>();
     }
 
     public synchronized Object getRemoteObject(Class<?> clazz) throws BadConstructorException {
-        remoteObjects.putIfAbsent(clazz, new CopyOnWriteArraySet<>());
-        Set<RemoteObject> objects = remoteObjects.get(clazz);
-        RemoteObject remoteObject = objects.stream().findFirst().orElseGet(() -> {
-           try {
-               return createRemoteObject(clazz);
-           } catch (BadConstructorException e) {
-               throw new RuntimeException("Failed to create remote object: " + clazz.getName(), e);
-           }
+        remoteObjects.computeIfAbsent(clazz, key -> {
+            try {
+                return createRemoteObject(clazz);
+            } catch (BadConstructorException e) {
+                throw new RuntimeException("Failed to create remote object: " + clazz.getName(), e);
+            }
         });
-        return remoteObject.getServant();
+        return remoteObjects.get(clazz).getServant();
     }
 
     private RemoteObject createRemoteObject(Class<?> clazz) throws BadConstructorException {
@@ -56,31 +54,17 @@ public class LifecycleManager {
                         new PoolingResource(clazz, this) :
                         new LazyAcquisitionResource(clazz, this);
 
-        RemoteObject remoteObject = new RemoteObject(clazz, strategy, resource);
-        this.remoteObjects.get(clazz).add(remoteObject);
-        return remoteObject;
-    }
-
-    // criado para testes
-    public void listAllRemoteObjectsByClass(Class<?> clazz) {
-        Set<RemoteObject> objects = remoteObjects.get(clazz);
-        for (RemoteObject remoteObject : objects) {
-            System.out.println(remoteObject);
-        }
+        return new RemoteObject(clazz, strategy, resource);
     }
 
     public void releaseRemoteObject(Object obj) {
-        Set<RemoteObject> objects = remoteObjects.get(obj.getClass());
-
-        for (RemoteObject servant : objects) {
-            if (servant.getClazz().equals(obj.getClass())) {
-                if (servant.getStrategy().getClass() == PerRequestInstance.class &&
-                        servant.getResource().getClass() == LazyAcquisitionResource.class) {
-
-                    objects.remove(servant);
-                } else if (servant.getResource().getClass() == PoolingResource.class) {
-                    servant.releaseServant(servant);
-                }
+        RemoteObject remoteObject = remoteObjects.get(obj.getClass());
+        if (remoteObject != null) {
+            if (remoteObject.getStrategy().getClass() == PerRequestInstance.class &&
+                    remoteObject.getResource().getClass() == LazyAcquisitionResource.class) {
+                remoteObjects.remove(obj.getClass());
+            } else if (remoteObject.getResource().getClass() == PoolingResource.class) {
+                remoteObject.releaseServant(obj);
             }
         }
     }
