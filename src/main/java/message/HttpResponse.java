@@ -47,4 +47,10 @@ public class HttpResponse{
     public void setBody(String body) {
         this.body = body;
     }
+
+    public void mountResponse(int statusCode, String statusMessage, String body) {
+        this.statusCode = statusCode;
+        this.statusMessage = statusMessage;
+        this.body = body;
+    }
 }

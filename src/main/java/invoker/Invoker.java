@@ -6,6 +6,7 @@ import annotation.parameters.RequestParam;
 import annotation.web.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import exceptions.InvokerException;
+import exceptions.LookupException;
 import exceptions.MarshallerException;
 import extension.ExtensionService;
 import lifecycle.LifecycleManager;
@@ -42,14 +43,13 @@ public class Invoker {
         var response = new HttpResponse();
         String fullRoute = request.getUrl();
         String httpMethod = request.getMethod();
-
-        extensionService.invokeBefore(request, response);
-
-        Class<?> clazz = lookupService.getRoute(fullRoute);
-        Method targetMethod = routeResolver.findAnnotatedMethod(clazz, httpMethod, fullRoute);
-        Object servant = lifecycleManager.getRemoteObject(clazz);
-        
+        Object servant = null;
         try {
+            extensionService.invokeBefore(request, response);
+
+            Class<?> clazz = lookupService.getRoute(fullRoute);
+            Method targetMethod = routeResolver.findAnnotatedMethod(clazz, httpMethod, fullRoute);
+            servant  = lifecycleManager.getRemoteObject(clazz);
 
             Object[] params = targetMethod.getParameterCount() != 0
                     ? resolveParams(targetMethod, clazz, request)
@@ -59,17 +59,24 @@ public class Invoker {
                     ? targetMethod.invoke(servant)
                     : targetMethod.invoke(servant, params);
 
-            response.setBody(result != null ? result.toString() : "null");
-            response.setStatusCode(result != null ? 200 : 500);
-            response.setStatusMessage(result != null ? "OK" : "Internal Server Error");
-            extensionService.invokeAfter(request, response);
-            return response;
+            if (result != null)
+                response.mountResponse(200, "OK", result.toString());
+            else
+                response.mountResponse(500, "Internal Server Error", "Internal Server Error");
 
+            extensionService.invokeAfter(request, response);
+
+        } catch (LookupException  | NullPointerException e) {
+            response.mountResponse(404, "Not Found", "Endpoint não encontrado: " + fullRoute);
+        } catch (MarshallerException e) {
+            response.mountResponse(400, "Bad Request", e.getMessage());
         } catch (Exception e) {
-           throw new InvokerException(e.getMessage());
+            response.mountResponse(500, "Internal Server Error",  "Internal Server Error: " + e.getMessage());
         } finally {
-            lifecycleManager.releaseRemoteObject(servant);
+            if (servant != null)
+                lifecycleManager.releaseRemoteObject(servant);
         }
+        return response;
     }
 
     private Object[] resolveParams(Method targetMethod, Class<?> clazz,HttpRequest request) {
