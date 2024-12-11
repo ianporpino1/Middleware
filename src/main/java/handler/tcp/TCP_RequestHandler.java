@@ -43,7 +43,7 @@ class TCP_RequestHandler implements Runnable, IHandler {
         HttpResponse response;
         try {
             response = invoker.invoke(request);
-        } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException |
+        } catch (InvocationTargetException | IllegalAccessException |
                  BadConstructorException e) {
             throw new ServerRequestHandlerException(e.getMessage());
         }

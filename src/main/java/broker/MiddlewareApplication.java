@@ -3,7 +3,8 @@ package broker;
 import annotation.Component;
 import broker.configuration.Configuration;
 import extension.ExtensionService;
-import extension.LoggingExtension;
+import extension.LoggingInterceptor;
+import extension.SecurityInterceptor;
 import handler.interfaces.IServerRequestHandler;
 import handler.tcp.TCP_ServerRequestHandler;
 import handler.udp.UDP_ServerRequestHandler;
@@ -23,7 +24,7 @@ public class MiddlewareApplication {
             application.start();
         }
     }
-
+    private final String token;
     private final String basePackage;
 
     public IServerRequestHandler requestHandler;
@@ -36,10 +37,12 @@ public class MiddlewareApplication {
     public MiddlewareApplication(String basePackage) {
         this.basePackage = basePackage;
         this.lookupService = new LookupService();
+        SecurityInterceptor securityInterceptor = new SecurityInterceptor();
 
         ExtensionService extensionService = new ExtensionService();
-        extensionService.registerExtension(new LoggingExtension());
-
+        extensionService.registerExtension(new LoggingInterceptor());
+        extensionService.registerExtension(securityInterceptor);
+        token = securityInterceptor.getToken();
         LifecycleManager lifecycleManager = new LifecycleManager();
 
         this.invoker = new Invoker(lookupService, extensionService, lifecycleManager);
@@ -55,11 +58,13 @@ public class MiddlewareApplication {
     public void launchRequestHandler(int port, String networkProtocol) {
         switch (networkProtocol) {
             case "tcp":
-                System.out.println("Starting TCP Server");
+                System.out.println("Starting TCP Server on port " + port);
+                System.out.println("Token: " + token);
                 this.requestHandler = new TCP_ServerRequestHandler(port, invoker);
                 break;
             case "udp":
-                System.out.println("Starting UDP Server");
+                System.out.println("Starting UDP Server on port " + port);
+                System.out.println("Token: " + token);
                 this.requestHandler = new UDP_ServerRequestHandler(port, invoker);
                 break;
         }

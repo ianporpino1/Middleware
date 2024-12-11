@@ -5,8 +5,8 @@ import message.HttpResponse;
 
 import java.util.logging.Logger;
 
-public class LoggingExtension implements Extension {
-    private static final Logger logger = Logger.getLogger(LoggingExtension.class.getName());
+public class LoggingInterceptor implements Interceptor {
+    private static final Logger logger = Logger.getLogger(LoggingInterceptor.class.getName());
 
     @Override
     public void beforeInvoke(HttpRequest request, HttpResponse response) {

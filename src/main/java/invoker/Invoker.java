@@ -39,13 +39,16 @@ public class Invoker {
         this.paramConverter = new ParamConverter();
     }
 
-    public HttpResponse invoke(HttpRequest request) throws BadConstructorException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    public HttpResponse invoke(HttpRequest request) throws BadConstructorException, InvocationTargetException, IllegalAccessException {
         var response = new HttpResponse();
         String fullRoute = request.getUrl();
         String httpMethod = request.getMethod();
         Object servant = null;
         try {
             extensionService.invokeBefore(request, response);
+
+            if (response.getStatusCode() == 401 || response.getStatusCode() == 403)
+                return response;
 
             Class<?> clazz = lookupService.getRoute(fullRoute);
             Method targetMethod = routeResolver.findAnnotatedMethod(clazz, httpMethod, fullRoute);
