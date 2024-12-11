@@ -21,7 +21,7 @@ class UDP_RequestHandler implements Runnable, IHandler {
     private Invoker invoker;
 
     private HttpMarshaller marshaller;
-    
+
     public UDP_RequestHandler(DatagramPacket packet, DatagramSocket socket, Invoker invoker) {
         this.packet = packet;
         this.invoker = invoker;
@@ -37,7 +37,7 @@ class UDP_RequestHandler implements Runnable, IHandler {
     @Override
     public void handle() {
         HttpRequest request = readRequest();
-        
+
         HttpResponse response;
         try {
             response = invoker.invoke(request);
@@ -47,24 +47,24 @@ class UDP_RequestHandler implements Runnable, IHandler {
         }
 
         sendResponse(response);
-        
+
     }
 
     private void sendResponse(HttpResponse response) {
         InetSocketAddress clientAddress = new InetSocketAddress(packet.getAddress(), packet.getPort());
-        String responseStr = response.toString();
-        byte[] responseData = responseStr.getBytes();
-        DatagramPacket responsePacket = new DatagramPacket(responseData, responseData.length, clientAddress);
-        try{
+        try {
+            String responseStr = marshaller.serialize(response);
+            byte[] responseData = responseStr.getBytes();
+            DatagramPacket responsePacket = new DatagramPacket(responseData, responseData.length, clientAddress);
             socket.send(responsePacket);
         } catch (IOException e) {
-            throw new ServerRequestHandlerException("Erro ao enviar resposta: "+e.getMessage());
+            throw new ServerRequestHandlerException("Erro ao enviar resposta: " + e.getMessage());
         }
     }
 
     private HttpRequest readRequest() {
         String httpString = new String(packet.getData(), 0, packet.getLength());
-        try{
+        try {
             return marshaller.deserialize(httpString);
         } catch (IOException e) {
             throw new ServerRequestHandlerException("Erro ao ler request: " + e.getMessage());
