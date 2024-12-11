@@ -76,7 +76,6 @@ public class MiddlewareApplication {
 
         for (Class<?> clazz : components) {
             addComponent(clazz);
-            System.out.println("Componente registrado: " + clazz.getSimpleName());
         }
     }
     public void addComponent(Class<?> component) {
